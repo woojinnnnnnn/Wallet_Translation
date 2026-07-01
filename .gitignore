@@ -30,6 +30,7 @@ dist-ssr
 templates
 .claude
 CLAUDE.md
+.serena
 
 package-lock.json
 yarn.lock
