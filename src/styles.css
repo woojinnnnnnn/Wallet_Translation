@@ -569,12 +569,14 @@ h1 {
   min-height: 18px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   width: fit-content;
   border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.05em;
   padding: 0 7px;
+  text-align: center;
   text-transform: uppercase;
 }
 
@@ -1145,7 +1147,7 @@ h1 {
 
 .risk-guide-section-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
 }
 
