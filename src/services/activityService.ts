@@ -155,11 +155,17 @@ export async function fetchAddressActivity(address: string, chainId: number) {
     ),
   ];
 
+  // Resolved first (and cached forever) because it decides whether the
+  // executor-mismatch check below is even meaningful for this wallet.
+  const ownerIsContract = await isContractAddress(chainConfig.apiBaseUrl, address);
+
   const [tokenSecurity, priceMap, addressSecurity, executedByOtherHashes] = await Promise.all([
     fetchTokenSecurity(chainId, collectTokenAddresses(sorted)),
     fetchUsdPrices(chainId, sorted),
     fetchAddressSecurity(collectSpenderAddresses(sorted)),
-    detectExecutedByOthers(chainConfig.apiBaseUrl, sentTokenTransferHashes, address),
+    ownerIsContract
+      ? Promise.resolve(new Set<string>())
+      : detectExecutedByOthers(chainConfig.apiBaseUrl, sentTokenTransferHashes, address),
   ]);
 
   return applyExecutorRisk(
@@ -184,6 +190,38 @@ async function fetchBlockscoutList<T>(url: string) {
 
   const data = (await response.json()) as BlockscoutListResponse<T>;
   return data.items ?? [];
+}
+
+// Whether an address is a contract never changes once it's deployed, so
+// this cache never expires either.
+const isContractCache = new Map<string, boolean>();
+
+/**
+ * Smart-contract wallets (Safe, ERC-4337 account abstraction, etc.) never
+ * sign their own transactions — some other EOA (a Safe owner, a bundler)
+ * always shows up as the tx signer even for a completely normal, authorized
+ * send. detectExecutedByOthers' "someone else signed this" heuristic is
+ * meaningless (and would false-positive on every single outgoing transfer)
+ * for such wallets, so callers should skip it when the owner is a contract.
+ */
+async function isContractAddress(apiBaseUrl: string, address: string): Promise<boolean> {
+  const key = address.toLowerCase();
+  const cached = isContractCache.get(key);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/addresses/${address}`);
+    if (!response.ok) return false;
+
+    const data = (await response.json()) as { is_contract?: boolean };
+    const isContract = data.is_contract === true;
+    isContractCache.set(key, isContract);
+    return isContract;
+  } catch {
+    return false;
+  }
 }
 
 // A transaction's signer never changes once mined, so this cache never
