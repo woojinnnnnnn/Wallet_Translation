@@ -28,13 +28,22 @@ export function WalletHeader({
 }) {
   return (
     <section className="toolbar" aria-label="wallet controls">
-      <div>
-        <p className="eyebrow">Wallet activity translator</p>
-        <h1>Wallet activity translator: DEMO</h1>
-        <p className="page-subtitle">
-          A cleaner read on what moved, where it went, and which network it
-          happened on.
-        </p>
+      <div className="brand-block">
+        <img
+          className="app-logo"
+          src={`/favicon-${theme}.png`}
+          alt=""
+          width={48}
+          height={48}
+        />
+        <div>
+          <p className="eyebrow">Wallet activity translator</p>
+          <h1>Wallet activity translator: DEMO</h1>
+          <p className="page-subtitle">
+            A cleaner read on what moved, where it went, and which network it
+            happened on.
+          </p>
+        </div>
       </div>
       <div className="wallet-actions">
         <button

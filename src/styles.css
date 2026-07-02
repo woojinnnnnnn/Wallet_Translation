@@ -40,6 +40,17 @@ button { font: inherit; }
   border-bottom: 1px solid #e2e8f0;
 }
 
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.app-logo {
+  flex-shrink: 0;
+  border-radius: 12px;
+}
+
 .eyebrow {
   margin: 0 0 6px;
   color: #94a3b8;

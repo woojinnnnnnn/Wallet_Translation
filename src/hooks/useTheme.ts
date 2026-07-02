@@ -11,6 +11,11 @@ function getInitialTheme(): Theme {
 function applyTheme(next: Theme) {
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
+
+  const favicon = document.getElementById('favicon-link') as HTMLLinkElement | null;
+  if (favicon) {
+    favicon.href = `/favicon-${next}.png`;
+  }
 }
 
 export function useTheme() {
