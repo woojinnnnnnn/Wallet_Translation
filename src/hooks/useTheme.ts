@@ -2,9 +2,16 @@ import { useEffect, useState } from 'react';
 
 export type Theme = 'light' | 'dark';
 
+// The inline bootstrap script in index.html already computes the theme
+// (storage -> prefers-color-scheme fallback) and sets it on <html> before
+// this module ever loads, precisely so there's no flash on first paint.
+// Reading it back here — instead of re-deriving it from localStorage/
+// matchMedia a second time — means that rule only has to live in one place.
 function getInitialTheme(): Theme {
-  const stored = localStorage.getItem('theme') as Theme | null;
-  if (stored === 'light' || stored === 'dark') return stored;
+  const attr = document.documentElement.getAttribute('data-theme');
+  if (attr === 'light' || attr === 'dark') return attr;
+
+  // Fallback in case the bootstrap script didn't run for some reason.
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 

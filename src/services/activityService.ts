@@ -12,6 +12,7 @@ import type {
   TransactionMovement,
   TransactionRisk,
 } from '../types/activity';
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
 import { shortenAddress, trimAmount } from '../utils/format';
 
 type BlockscoutAddress = {
@@ -155,17 +156,18 @@ export async function fetchAddressActivity(address: string, chainId: number) {
     ),
   ];
 
-  // Resolved first (and cached forever) because it decides whether the
-  // executor-mismatch check below is even meaningful for this wallet.
-  const ownerIsContract = await isContractAddress(chainConfig.apiBaseUrl, address);
-
   const [tokenSecurity, priceMap, addressSecurity, executedByOtherHashes] = await Promise.all([
     fetchTokenSecurity(chainId, collectTokenAddresses(sorted)),
     fetchUsdPrices(chainId, sorted),
     fetchAddressSecurity(collectSpenderAddresses(sorted)),
-    ownerIsContract
-      ? Promise.resolve(new Set<string>())
-      : detectExecutedByOthers(chainConfig.apiBaseUrl, sentTokenTransferHashes, address),
+    // isContractAddress decides whether the executor-mismatch check below is
+    // even meaningful for this wallet; chained rather than awaited upfront
+    // so it runs concurrently with the other three instead of blocking them.
+    isContractAddress(chainConfig.apiBaseUrl, address).then((ownerIsContract) =>
+      ownerIsContract
+        ? new Set<string>()
+        : detectExecutedByOthers(chainConfig.apiBaseUrl, sentTokenTransferHashes, address),
+    ),
   ]);
 
   return applyExecutorRisk(
@@ -218,7 +220,7 @@ async function isContractAddress(apiBaseUrl: string, address: string): Promise<b
   }
 
   try {
-    const response = await fetch(`${apiBaseUrl}/addresses/${address}`);
+    const response = await fetchWithTimeout(`${apiBaseUrl}/addresses/${address}`);
     if (!response.ok) return true;
 
     const data = (await response.json()) as { is_contract?: boolean };
@@ -243,13 +245,8 @@ async function fetchTransactionSender(
     return cached;
   }
 
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 4000);
-
   try {
-    const response = await fetch(`${apiBaseUrl}/transactions/${hash}`, {
-      signal: controller.signal,
-    });
+    const response = await fetchWithTimeout(`${apiBaseUrl}/transactions/${hash}`);
 
     if (!response.ok) return undefined;
 
@@ -263,8 +260,6 @@ async function fetchTransactionSender(
     return sender;
   } catch {
     return undefined;
-  } finally {
-    window.clearTimeout(timeoutId);
   }
 }
 
@@ -727,6 +722,15 @@ function createSwapTransaction(
     received.map((transaction) => transaction.asset),
   ).join(' + ');
 
+  // As with createGroupedMovementTransaction: don't let a clean "it's a
+  // swap" default erase a high/medium risk any individual leg already
+  // carried (e.g. a scam-flagged counterparty on one side).
+  const strongestRisk = mostSevereRisk(group.map((transaction) => transaction.risk));
+  const risk: TransactionRisk =
+    strongestRisk && strongestRisk.level !== 'low'
+      ? strongestRisk
+      : { level: 'low', reason: 'Swap with both outgoing and incoming assets detected.' };
+
   return {
     ...first,
     type: 'swap',
@@ -736,13 +740,24 @@ function createSwapTransaction(
     toAddress: first.toAddress,
     asset: `${sentAssets} -> ${receivedAssets}`,
     amount: `${summarizeMovementAmounts(sent)} -> ${summarizeMovementAmounts(received)}`,
-    risk: {
-      level: 'low',
-      reason: 'Swap with both outgoing and incoming assets detected.',
-    },
+    risk,
     summary: `${sentAssets} left your wallet and ${receivedAssets} came in.`,
     movements: group.map(toMovement),
   };
+}
+
+const RISK_SEVERITY: Record<TransactionRisk['level'], number> = {
+  high: 3,
+  medium: 2,
+  unknown: 1,
+  low: 0,
+};
+
+function mostSevereRisk(risks: TransactionRisk[]): TransactionRisk | undefined {
+  return risks.reduce<TransactionRisk | undefined>((worst, risk) => {
+    if (!worst || RISK_SEVERITY[risk.level] > RISK_SEVERITY[worst.level]) return risk;
+    return worst;
+  }, undefined);
 }
 
 function createGroupedMovementTransaction(
@@ -751,14 +766,21 @@ function createGroupedMovementTransaction(
   const first = group[0];
   const assets = compactUnique(group.map((transaction) => transaction.asset)).join(' + ');
 
+  // Individual movements may already carry a high/medium risk (e.g. a
+  // Blockscout scam-address flag). Merging them shouldn't silently erase
+  // that — only fall back to the generic "multiple movements" caveat when
+  // none of the movements had anything more specific to say.
+  const strongestRisk = mostSevereRisk(group.map((transaction) => transaction.risk));
+  const risk: TransactionRisk =
+    strongestRisk && strongestRisk.level !== 'low'
+      ? strongestRisk
+      : { level: 'unknown', reason: 'Multiple token movements happened in one transaction.' };
+
   return {
     ...first,
     asset: assets,
     amount: summarizeMovementAmounts(group),
-    risk: {
-      level: 'unknown',
-      reason: 'Multiple token movements happened in one transaction.',
-    },
+    risk,
     summary: `${group.length} token movements happened in this transaction.`,
     movements: group.map(toMovement),
   };

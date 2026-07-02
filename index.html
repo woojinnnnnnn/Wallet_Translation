@@ -6,6 +6,12 @@
     <title>Wallet Transaction Viewer</title>
     <link id="favicon-link" rel="icon" type="image/png" href="/favicon-dark.png" />
     <script>
+      // This has to run inline, synchronously, before any module loads —
+      // otherwise the page flashes the wrong theme/favicon on first paint.
+      // That means it necessarily duplicates a bit of what
+      // src/hooks/useTheme.ts does at runtime: the 'theme' localStorage key
+      // and the '/favicon-{theme}.png' path pattern must stay in sync with
+      // that file if either ever changes.
       (function () {
         var stored = localStorage.getItem('theme');
         var isValidStored = stored === 'light' || stored === 'dark';

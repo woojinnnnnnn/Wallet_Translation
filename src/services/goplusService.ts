@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
 import { TtlCache } from '../utils/ttlCache';
 
 const GOPLUS_SUPPORTED_CHAINS: Record<number, string> = {
@@ -123,13 +124,9 @@ export async function fetchAddressSecurity(
 
   await Promise.all(
     uncachedAddresses.map(async (address) => {
-      const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), 4000);
-
       try {
-        const response = await fetch(
+        const response = await fetchWithTimeout(
           `https://api.gopluslabs.io/api/v1/address_security/${address}`,
-          { signal: controller.signal },
         );
 
         if (!response.ok) {
@@ -158,8 +155,6 @@ export async function fetchAddressSecurity(
         // timeout/network error — don't cache it, so it's retried on the
         // next fetch instead of being stuck "unknown" for the full TTL
         failedAddresses.add(address);
-      } finally {
-        window.clearTimeout(timeoutId);
       }
     }),
   );
@@ -195,13 +190,9 @@ export async function fetchTokenSecurity(
     return { flags, failedAddresses };
   }
 
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 4000);
-
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://api.gopluslabs.io/api/v1/token_security/${goplusChainId}?contract_addresses=${uncachedAddresses.join(',')}`,
-      { signal: controller.signal },
     );
 
     if (!response.ok) {
@@ -247,7 +238,5 @@ export async function fetchTokenSecurity(
     // timeout/network error — don't cache, so these get retried next fetch
     uncachedAddresses.forEach((address) => failedAddresses.add(address));
     return { flags, failedAddresses };
-  } finally {
-    window.clearTimeout(timeoutId);
   }
 }

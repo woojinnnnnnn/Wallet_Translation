@@ -1,4 +1,5 @@
 import type { NormalizedTransaction } from '../types/activity';
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
 import { TtlCache } from '../utils/ttlCache';
 
 const PRICE_CACHE_TTL_MS = 5 * 60_000;
@@ -13,20 +14,8 @@ const CHAIN_PLATFORM_IDS: Record<number, string> = {
 const NATIVE_SYMBOL_TO_COINGECKO_ID: Record<string, string> = {
   ETH: 'ethereum',
   'Sepolia ETH': 'ethereum',
-  POL: 'matic-network',
-  MATIC: 'matic-network',
   WETH: 'weth',
 };
-
-async function fetchWithTimeout(url: string): Promise<Response> {
-  const controller = new AbortController();
-  const id = window.setTimeout(() => controller.abort(), 5000);
-  try {
-    return await fetch(url, { signal: controller.signal });
-  } finally {
-    window.clearTimeout(id);
-  }
-}
 
 export async function fetchUsdPrices(
   chainId: number,
@@ -77,6 +66,7 @@ export async function fetchUsdPrices(
     fetches.push(
       fetchWithTimeout(
         `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`,
+        5000,
       )
         .then(async (res) => {
           if (!res.ok) return;
@@ -99,6 +89,7 @@ export async function fetchUsdPrices(
     fetches.push(
       fetchWithTimeout(
         `https://api.coingecko.com/api/v3/simple/token_price/${platformId}?contract_addresses=${addresses}&vs_currencies=usd`,
+        5000,
       )
         .then(async (res) => {
           if (!res.ok) return;
