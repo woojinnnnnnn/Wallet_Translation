@@ -144,6 +144,66 @@ h1 {
 .status { margin: 12px 0 0; font-size: 14px; font-weight: 700; }
 .status-error { color: #ef4444; }
 
+/* ── Address lookup ──────────────────────────────────────── */
+
+.address-lookup { margin-bottom: 16px; }
+
+.address-lookup-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.address-lookup-label {
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.address-lookup-input {
+  min-width: 240px;
+  flex: 1 1 240px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  padding: 8px 12px;
+}
+
+.address-lookup-input:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.35);
+  outline-offset: 1px;
+}
+
+.address-lookup-submit,
+.address-lookup-clear {
+  min-height: 32px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #475569;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 14px;
+}
+
+.address-lookup-submit:hover,
+.address-lookup-clear:hover {
+  border-color: rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.82);
+  color: #0f172a;
+}
+
+.address-lookup-error { margin: 6px 0 0; color: #ef4444; font-size: 13px; }
+.address-lookup-active { margin: 6px 0 0; color: #64748b; font-size: 13px; }
+
 /* ── Summary strip ───────────────────────────────────────── */
 
 .summary-strip {
@@ -1185,6 +1245,26 @@ h1 {
   background: rgba(255, 255, 255, 0.10);
   color: #64748b;
 }
+
+/* Address lookup */
+[data-theme="dark"] .address-lookup-input {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f1f5f9;
+}
+[data-theme="dark"] .address-lookup-submit,
+[data-theme="dark"] .address-lookup-clear {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+}
+[data-theme="dark"] .address-lookup-submit:hover,
+[data-theme="dark"] .address-lookup-clear:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.10);
+  color: #f1f5f9;
+}
+[data-theme="dark"] .address-lookup-active { color: #94a3b8; }
 
 /* Summary strip */
 [data-theme="dark"] .summary-strip div {

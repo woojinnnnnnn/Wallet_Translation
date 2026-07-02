@@ -96,7 +96,11 @@ export function getSupportedActivityChain(chainId?: number) {
   return chainActivityConfig[chainId];
 }
 
-export async function fetchAddressActivity(address: string, chainId: number) {
+export async function fetchAddressActivity(
+  address: string,
+  chainId: number,
+  isOwnWallet = true,
+) {
   const chainConfig = chainActivityConfig[chainId];
 
   if (!chainConfig) {
@@ -114,16 +118,16 @@ export async function fetchAddressActivity(address: string, chainId: number) {
   ]);
 
   const normalizedTokenTransfers = tokenTransfers
-    .map((transfer) => normalizeTokenTransfer(transfer, address))
+    .map((transfer) => normalizeTokenTransfer(transfer, address, isOwnWallet))
     .filter((transaction): transaction is NormalizedTransaction => Boolean(transaction));
 
   const normalizedNativeTransfers = transactions
     .map((transaction) =>
-      normalizeNativeTransaction(transaction, address, chainConfig.nativeSymbol),
+      normalizeNativeTransaction(transaction, address, chainConfig.nativeSymbol, isOwnWallet),
     )
     .filter((transaction): transaction is NormalizedTransaction => Boolean(transaction));
   const normalizedApprovals = transactions
-    .map((transaction) => normalizeBlockscoutApproval(transaction, address))
+    .map((transaction) => normalizeBlockscoutApproval(transaction, address, isOwnWallet))
     .filter((transaction): transaction is NormalizedTransaction => Boolean(transaction));
 
   // A zero-value call that also emits a Transfer event (e.g. calling a
@@ -137,16 +141,19 @@ export async function fetchAddressActivity(address: string, chainId: number) {
     ...normalizedApprovals.map((tx) => tx.id),
   ]);
   const normalizedContractInteractions = transactions
-    .map((transaction) => normalizeContractInteraction(transaction, address))
+    .map((transaction) => normalizeContractInteraction(transaction, address, isOwnWallet))
     .filter((transaction): transaction is NormalizedTransaction => Boolean(transaction))
     .filter((transaction) => !explainedHashes.has(transaction.id));
 
-  const sorted = groupTransactions([
-    ...normalizedApprovals,
-    ...normalizedTokenTransfers,
-    ...normalizedNativeTransfers,
-    ...normalizedContractInteractions,
-  ]).sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+  const sorted = groupTransactions(
+    [
+      ...normalizedApprovals,
+      ...normalizedTokenTransfers,
+      ...normalizedNativeTransfers,
+      ...normalizedContractInteractions,
+    ],
+    isOwnWallet,
+  ).sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
 
   const sentTokenTransferHashes = [
     ...new Set(
@@ -319,6 +326,7 @@ function applyExecutorRisk(
 function normalizeTokenTransfer(
   transfer: BlockscoutTokenTransfer,
   ownerAddress: string,
+  isOwnWallet: boolean,
 ): NormalizedTransaction | undefined {
   const fromHash = transfer.from?.hash ?? '';
   const toHash = transfer.to?.hash ?? '';
@@ -330,11 +338,12 @@ function normalizeTokenTransfer(
 
   const symbol = transfer.token?.symbol ?? transfer.token_type ?? 'TOKEN';
   const amount = formatTokenAmount(transfer);
-  const from = labelAddress(transfer.from, ownerAddress);
-  const to = labelAddress(transfer.to, ownerAddress);
+  const from = labelAddress(transfer.from, ownerAddress, isOwnWallet);
+  const to = labelAddress(transfer.to, ownerAddress, isOwnWallet);
   const fromAddress = transfer.from?.hash ?? '';
   const toAddress = transfer.to?.hash ?? '';
   const counterparty = direction === 'sent' ? transfer.to : transfer.from;
+  const walletPhrase = isOwnWallet ? 'your wallet' : 'this wallet';
 
   return {
     id: transfer.transaction_hash,
@@ -349,8 +358,8 @@ function normalizeTokenTransfer(
     risk: getScamOverride(counterparty) ?? getTransferRisk(direction),
     summary:
       direction === 'sent'
-        ? `${symbol} left your wallet.`
-        : `${symbol} arrived in your wallet.`,
+        ? `${symbol} left ${walletPhrase}.`
+        : `${symbol} arrived in ${walletPhrase}.`,
     timestamp: transfer.timestamp ?? new Date().toISOString(),
   };
 }
@@ -359,6 +368,7 @@ function normalizeNativeTransaction(
   transaction: BlockscoutTransaction,
   ownerAddress: string,
   nativeSymbol: string,
+  isOwnWallet: boolean,
 ): NormalizedTransaction | undefined {
   const value = BigInt(transaction.value ?? '0');
 
@@ -375,21 +385,22 @@ function normalizeNativeTransaction(
   }
 
   const counterparty = direction === 'sent' ? transaction.to : transaction.from;
+  const walletPhrase = isOwnWallet ? 'your wallet' : 'this wallet';
 
   return {
     id: transaction.hash,
     type: direction,
-    from: labelAddress(transaction.from, ownerAddress),
+    from: labelAddress(transaction.from, ownerAddress, isOwnWallet),
     fromAddress: transaction.from?.hash ?? '',
-    to: labelAddress(transaction.to, ownerAddress),
+    to: labelAddress(transaction.to, ownerAddress, isOwnWallet),
     toAddress: transaction.to?.hash ?? '',
     asset: nativeSymbol,
     amount: trimAmount(formatEther(value)),
     risk: getScamOverride(counterparty) ?? getTransferRisk(direction),
     summary:
       direction === 'sent'
-        ? `${nativeSymbol} left your wallet.`
-        : `${nativeSymbol} arrived in your wallet.`,
+        ? `${nativeSymbol} left ${walletPhrase}.`
+        : `${nativeSymbol} arrived in ${walletPhrase}.`,
     timestamp: transaction.timestamp ?? new Date().toISOString(),
   };
 }
@@ -397,6 +408,7 @@ function normalizeNativeTransaction(
 function normalizeContractInteraction(
   transaction: BlockscoutTransaction,
   ownerAddress: string,
+  isOwnWallet: boolean,
 ): NormalizedTransaction | undefined {
   const value = BigInt(transaction.value ?? '0');
 
@@ -421,9 +433,9 @@ function normalizeContractInteraction(
   return {
     id: transaction.hash,
     type: 'contract',
-    from: labelAddress(transaction.from, ownerAddress),
+    from: labelAddress(transaction.from, ownerAddress, isOwnWallet),
     fromAddress: fromHash,
-    to: labelAddress(transaction.to, ownerAddress),
+    to: labelAddress(transaction.to, ownerAddress, isOwnWallet),
     toAddress: toHash,
     asset: 'Contract',
     amount: '—',
@@ -441,11 +453,12 @@ function normalizeContractInteraction(
 function normalizeBlockscoutApproval(
   transaction: BlockscoutTransaction,
   ownerAddress: string,
+  isOwnWallet: boolean,
 ): NormalizedTransaction | undefined {
   const methodText =
     transaction.decoded_input?.method_call ?? transaction.method ?? '';
   const isUnlimited = isUnlimitedBlockscoutApproval(transaction.decoded_input?.parameters);
-  const approvalKind = getApprovalKind(methodText, isUnlimited);
+  const approvalKind = getApprovalKind(methodText, isUnlimited, isOwnWallet);
   const fromAddress = transaction.from?.hash ?? '';
 
   if (!approvalKind || fromAddress.toLowerCase() !== ownerAddress.toLowerCase()) {
@@ -458,11 +471,11 @@ function normalizeBlockscoutApproval(
   return {
     id: transaction.hash,
     type: 'approval',
-    from: labelAddress(transaction.from, ownerAddress),
+    from: labelAddress(transaction.from, ownerAddress, isOwnWallet),
     fromAddress,
     to: spenderAddress
-      ? labelPlainAddress(spenderAddress, ownerAddress)
-      : labelAddress(transaction.to, ownerAddress),
+      ? labelPlainAddress(spenderAddress, ownerAddress, isOwnWallet)
+      : labelAddress(transaction.to, ownerAddress, isOwnWallet),
     toAddress: spenderAddress ?? tokenContractAddress,
     tokenContractAddress: tokenContractAddress || undefined,
     spenderAddress,
@@ -506,6 +519,7 @@ function isUnlimitedBlockscoutApproval(
 function getApprovalKind(
   methodText: string,
   isUnlimited = false,
+  isOwnWallet = true,
 ):
   | {
       asset: string;
@@ -515,6 +529,7 @@ function getApprovalKind(
     }
   | undefined {
   const method = methodText.toLowerCase();
+  const walletPhrase = isOwnWallet ? 'your wallet' : 'this wallet';
 
   if (!method) {
     return undefined;
@@ -568,7 +583,7 @@ function getApprovalKind(
         level: 'medium',
         reason: 'Token spending approvals should be reviewed.',
       },
-      summary: 'You allowed another address to spend tokens from your wallet.',
+      summary: `You allowed another address to spend tokens from ${walletPhrase}.`,
     };
   }
 
@@ -649,7 +664,11 @@ function formatTokenAmount(transfer: BlockscoutTokenTransfer) {
   return trimAmount(formatUnits(BigInt(rawValue), decimals));
 }
 
-function labelAddress(address: BlockscoutAddress | null | undefined, ownerAddress: string) {
+function labelAddress(
+  address: BlockscoutAddress | null | undefined,
+  ownerAddress: string,
+  isOwnWallet: boolean,
+) {
   const hash = address?.hash;
 
   if (!hash) {
@@ -657,7 +676,7 @@ function labelAddress(address: BlockscoutAddress | null | undefined, ownerAddres
   }
 
   if (hash.toLowerCase() === ownerAddress.toLowerCase()) {
-    return 'My wallet';
+    return isOwnWallet ? 'My wallet' : 'This wallet';
   }
 
   return (
@@ -668,19 +687,19 @@ function labelAddress(address: BlockscoutAddress | null | undefined, ownerAddres
   );
 }
 
-function labelPlainAddress(address: string, ownerAddress: string) {
+function labelPlainAddress(address: string, ownerAddress: string, isOwnWallet: boolean) {
   if (!address) {
     return 'Unknown address';
   }
 
   if (address.toLowerCase() === ownerAddress.toLowerCase()) {
-    return 'My wallet';
+    return isOwnWallet ? 'My wallet' : 'This wallet';
   }
 
   return knownAddresses[address.toLowerCase()] ?? `Unknown address ${shortenAddress(address)}`;
 }
 
-function groupTransactions(transactions: NormalizedTransaction[]) {
+function groupTransactions(transactions: NormalizedTransaction[], isOwnWallet: boolean) {
   const byHash = new Map<string, NormalizedTransaction[]>();
 
   for (const transaction of transactions) {
@@ -700,7 +719,7 @@ function groupTransactions(transactions: NormalizedTransaction[]) {
     const received = group.filter((transaction) => transaction.type === 'received');
 
     if (sent.length > 0 && received.length > 0) {
-      return createSwapTransaction(group, sent, received);
+      return createSwapTransaction(group, sent, received, isOwnWallet);
     }
 
     if (group.length > 1) {
@@ -715,6 +734,7 @@ function createSwapTransaction(
   group: NormalizedTransaction[],
   sent: NormalizedTransaction[],
   received: NormalizedTransaction[],
+  isOwnWallet: boolean,
 ): NormalizedTransaction {
   const first = group[0];
   const sentAssets = compactUnique(sent.map((transaction) => transaction.asset)).join(' + ');
@@ -731,17 +751,20 @@ function createSwapTransaction(
       ? strongestRisk
       : { level: 'low', reason: 'Swap with both outgoing and incoming assets detected.' };
 
+  const ownerLabel = isOwnWallet ? 'My wallet' : 'This wallet';
+  const walletPhrase = isOwnWallet ? 'your wallet' : 'this wallet';
+
   return {
     ...first,
     type: 'swap',
-    from: 'My wallet',
+    from: ownerLabel,
     fromAddress: first.fromAddress,
-    to: 'My wallet',
+    to: ownerLabel,
     toAddress: first.toAddress,
     asset: `${sentAssets} -> ${receivedAssets}`,
     amount: `${summarizeMovementAmounts(sent)} -> ${summarizeMovementAmounts(received)}`,
     risk,
-    summary: `${sentAssets} left your wallet and ${receivedAssets} came in.`,
+    summary: `${sentAssets} left ${walletPhrase} and ${receivedAssets} came in.`,
     movements: group.map(toMovement),
   };
 }

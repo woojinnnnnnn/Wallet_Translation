@@ -32,16 +32,18 @@ export function useWalletActivity({
   address,
   chainId,
   isConnected,
+  isOwnWallet = true,
 }: {
   address?: string;
   chainId?: number;
   isConnected: boolean;
+  isOwnWallet?: boolean;
 }) {
   const [activityRange, setActivityRange] = useState<ActivityRange>('latest');
   const supportedActivityChain = getSupportedActivityChain(chainId);
   const activityQuery = useQuery({
-    queryKey: ['address-activity', address, chainId],
-    queryFn: () => fetchAddressActivity(address!, chainId!),
+    queryKey: ['address-activity', address, chainId, isOwnWallet],
+    queryFn: () => fetchAddressActivity(address!, chainId!, isOwnWallet),
     enabled: Boolean(address && chainId && supportedActivityChain),
     staleTime: 60_000,
   });

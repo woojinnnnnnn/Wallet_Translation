@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { mainnet } from 'wagmi/chains';
+import { AddressLookup } from './components/AddressLookup';
 import { ActivityControls } from './components/ActivityControls';
 import { RiskGuideModal } from './components/RiskGuideModal';
 import { StatusMessages } from './components/StatusMessages';
 import { SummaryStrip } from './components/SummaryStrip';
 import { TransactionList } from './components/TransactionList';
 import { WalletHeader } from './components/WalletHeader';
-import { getChainSymbol } from './constants/chains';
+import { getChainSymbol, supportedChains } from './constants/chains';
 import { useTheme } from './hooks/useTheme';
 import { useWalletActivity } from './hooks/useWalletActivity';
 import { useWalletConnection } from './hooks/useWalletConnection';
@@ -21,6 +23,13 @@ function App() {
   const [isRiskGuideOpen, setIsRiskGuideOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const wallet = useWalletConnection();
+  const [manualAddress, setManualAddress] = useState<string | null>(null);
+  const [manualChainId, setManualChainId] = useState<number>(mainnet.id);
+  const isManualMode = Boolean(manualAddress);
+  const effectiveChain = isManualMode
+    ? supportedChains.find((chain) => chain.id === manualChainId)
+    : wallet.chain;
+  const effectiveIsConnected = isManualMode || wallet.isConnected;
   const {
     activityQuery,
     activityRange,
@@ -28,11 +37,12 @@ function App() {
     setActivityRange,
     transactions,
   } = useWalletActivity({
-    address: wallet.address,
-    chainId: wallet.chain?.id,
-    isConnected: wallet.isConnected,
+    address: isManualMode ? manualAddress! : wallet.address,
+    chainId: effectiveChain?.id,
+    isConnected: effectiveIsConnected,
+    isOwnWallet: !isManualMode,
   });
-  const activeChainSymbol = getChainSymbol(wallet.chain?.id);
+  const activeChainSymbol = getChainSymbol(effectiveChain?.id);
 
   function toggleTransaction(transactionId: string) {
     setExpandedTransactionId((currentId) =>
@@ -83,28 +93,36 @@ function App() {
         switchChainError={wallet.switchChainError}
       />
 
+      <AddressLookup
+        activeAddress={manualAddress}
+        onClear={() => setManualAddress(null)}
+        onLookup={setManualAddress}
+      />
+
       <SummaryStrip
-        isConnected={wallet.isConnected}
+        isConnected={effectiveIsConnected}
         isFetching={activityQuery.isFetching}
         transactionCount={transactions.length}
       />
 
       <ActivityControls
-        activeChain={wallet.chain}
+        activeChain={effectiveChain}
         activityRange={activityRange}
-        isConnected={wallet.isConnected}
-        isSwitchingChain={wallet.isSwitchingChain}
+        isConnected={effectiveIsConnected}
+        isSwitchingChain={isManualMode ? false : wallet.isSwitchingChain}
         onRangeChange={setActivityRange}
-        onSwitchChain={(chainId) => wallet.switchChain({ chainId })}
+        onSwitchChain={(chainId) =>
+          isManualMode ? setManualChainId(chainId) : wallet.switchChain({ chainId })
+        }
       />
 
       <TransactionList
         activeChainSymbol={activeChainSymbol}
-        chain={wallet.chain}
+        chain={effectiveChain}
         copiedAddress={copiedAddress}
         copiedTransactionId={copiedTransactionId}
         expandedTransactionId={expandedTransactionId}
-        isConnected={wallet.isConnected}
+        isConnected={effectiveIsConnected}
         isFetching={activityQuery.isFetching}
         onCopyAddress={copyAddress}
         onCopyHash={copyTransactionHash}
