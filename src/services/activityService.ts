@@ -203,9 +203,15 @@ const isContractCache = new Map<string, boolean>();
  * send. detectExecutedByOthers' "someone else signed this" heuristic is
  * meaningless (and would false-positive on every single outgoing transfer)
  * for such wallets, so callers should skip it when the owner is a contract.
+ *
+ * On failure (timeout/network/non-OK), fails safe toward "assume contract"
+ * rather than "assume EOA" — a missed executor-mismatch check for one fetch
+ * is far less harmful than false-flagging a Safe's normal transfers as a
+ * suspected drain, which is the exact bug this function exists to prevent.
+ * Failure results aren't cached, since they're a fallback, not a real answer.
  */
 async function isContractAddress(apiBaseUrl: string, address: string): Promise<boolean> {
-  const key = address.toLowerCase();
+  const key = `${apiBaseUrl}:${address.toLowerCase()}`;
   const cached = isContractCache.get(key);
   if (cached !== undefined) {
     return cached;
@@ -213,14 +219,14 @@ async function isContractAddress(apiBaseUrl: string, address: string): Promise<b
 
   try {
     const response = await fetch(`${apiBaseUrl}/addresses/${address}`);
-    if (!response.ok) return false;
+    if (!response.ok) return true;
 
     const data = (await response.json()) as { is_contract?: boolean };
     const isContract = data.is_contract === true;
     isContractCache.set(key, isContract);
     return isContract;
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -295,7 +301,14 @@ function applyExecutorRisk(
   if (executedByOtherHashes.size === 0) return transactions;
 
   return transactions.map((tx) => {
-    if (tx.type !== 'sent' || !executedByOtherHashes.has(tx.id)) return tx;
+    // executedByOtherHashes is only ever seeded from hashes that had a
+    // 'sent' token leg (see sentTokenTransferHashes below), so a flagged
+    // hash always had an outgoing movement — but groupTransactions may have
+    // since retyped it to 'swap' if the same hash also had an incoming leg
+    // (the classic "drain disguised as a swap" pattern). Match both so the
+    // flag survives grouping instead of being silently dropped.
+    const canCarryExecutorRisk = tx.type === 'sent' || tx.type === 'swap';
+    if (!canCarryExecutorRisk || !executedByOtherHashes.has(tx.id)) return tx;
 
     return {
       ...tx,
