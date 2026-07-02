@@ -124,9 +124,21 @@ export async function fetchAddressActivity(address: string, chainId: number) {
   const normalizedApprovals = transactions
     .map((transaction) => normalizeBlockscoutApproval(transaction, address))
     .filter((transaction): transaction is NormalizedTransaction => Boolean(transaction));
+
+  // A zero-value call that also emits a Transfer event (e.g. calling a
+  // token/router method that moves tokens as a side effect) already has a
+  // clear explanation via the token transfer or approval above — only treat
+  // it as an opaque "contract interaction" when nothing else explains it,
+  // otherwise it duplicates the hash and gets merged into a confusing
+  // "X + Contract" grouped-movement entry.
+  const explainedHashes = new Set([
+    ...normalizedTokenTransfers.map((tx) => tx.id),
+    ...normalizedApprovals.map((tx) => tx.id),
+  ]);
   const normalizedContractInteractions = transactions
     .map((transaction) => normalizeContractInteraction(transaction, address))
-    .filter((transaction): transaction is NormalizedTransaction => Boolean(transaction));
+    .filter((transaction): transaction is NormalizedTransaction => Boolean(transaction))
+    .filter((transaction) => !explainedHashes.has(transaction.id));
 
   const sorted = groupTransactions([
     ...normalizedApprovals,
