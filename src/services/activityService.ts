@@ -529,10 +529,20 @@ function getApprovalKind(
   return undefined;
 }
 
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
 function getScamOverride(
   counterparty: BlockscoutAddress | null | undefined,
 ): TransactionRisk | undefined {
   if (counterparty?.is_scam !== true) {
+    return undefined;
+  }
+
+  // The null address is a protocol sentinel for "minted/burned," not an
+  // actor — Blockscout's own reputation data flags 0x0 itself as "scam"
+  // (likely because countless scam tokens mint from it), which would
+  // otherwise make every normal token mint show up as high risk.
+  if (counterparty?.hash?.toLowerCase() === NULL_ADDRESS) {
     return undefined;
   }
 
