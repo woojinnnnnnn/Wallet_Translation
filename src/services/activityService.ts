@@ -59,8 +59,11 @@ type BlockscoutTransaction = {
   value?: string | null;
 };
 
+type BlockscoutCursor = Record<string, string | number | boolean> | null;
+
 type BlockscoutListResponse<T> = {
   items?: T[];
+  next_page_params?: BlockscoutCursor;
 };
 
 type ChainActivityConfig = {
@@ -96,10 +99,28 @@ export function getSupportedActivityChain(chainId?: number) {
   return chainActivityConfig[chainId];
 }
 
-export async function fetchAddressActivity(
+export type ActivityPageParam = {
+  tokenTransfersCursor: BlockscoutCursor;
+  tokenTransfersExhausted: boolean;
+  transactionsCursor: BlockscoutCursor;
+  transactionsExhausted: boolean;
+  rawTokenTransfers: BlockscoutTokenTransfer[];
+  rawTransactions: BlockscoutTransaction[];
+};
+
+/**
+ * Fetches one page of activity and re-runs the full normalize/group/enrich
+ * pipeline over ALL raw records accumulated so far (not just the new page).
+ * This keeps hash-based grouping (swap/approval detection) correct across
+ * page boundaries, and is cheap to repeat because GoPlus/CoinGecko/executor
+ * lookups are all cached — reprocessing an already-seen transaction is a
+ * cache hit, not a new network request.
+ */
+export async function fetchAddressActivityPage(
   address: string,
   chainId: number,
-  isOwnWallet = true,
+  isOwnWallet: boolean,
+  pageParam?: ActivityPageParam,
 ) {
   const chainConfig = chainActivityConfig[chainId];
 
@@ -108,15 +129,72 @@ export async function fetchAddressActivity(
   }
 
   const encodedAddress = encodeURIComponent(address);
-  const [tokenTransfers, transactions] = await Promise.all([
-    fetchBlockscoutList<BlockscoutTokenTransfer>(
-      `${chainConfig.apiBaseUrl}/addresses/${encodedAddress}/token-transfers`,
-    ),
-    fetchBlockscoutList<BlockscoutTransaction>(
-      `${chainConfig.apiBaseUrl}/addresses/${encodedAddress}/transactions`,
-    ),
+  const tokenTransfersExhausted = pageParam?.tokenTransfersExhausted ?? false;
+  const transactionsExhausted = pageParam?.transactionsExhausted ?? false;
+
+  const [tokenTransfersResult, transactionsResult] = await Promise.all([
+    tokenTransfersExhausted
+      ? { items: pageParam!.rawTokenTransfers, nextPageParams: null as BlockscoutCursor }
+      : fetchBlockscoutPage<BlockscoutTokenTransfer>(
+          `${chainConfig.apiBaseUrl}/addresses/${encodedAddress}/token-transfers`,
+          pageParam?.tokenTransfersCursor ?? null,
+        ).then((page) => ({
+          items: [...(pageParam?.rawTokenTransfers ?? []), ...page.items],
+          nextPageParams: page.nextPageParams,
+        })),
+    transactionsExhausted
+      ? { items: pageParam!.rawTransactions, nextPageParams: null as BlockscoutCursor }
+      : fetchBlockscoutPage<BlockscoutTransaction>(
+          `${chainConfig.apiBaseUrl}/addresses/${encodedAddress}/transactions`,
+          pageParam?.transactionsCursor ?? null,
+        ).then((page) => ({
+          items: [...(pageParam?.rawTransactions ?? []), ...page.items],
+          nextPageParams: page.nextPageParams,
+        })),
   ]);
 
+  const rawTokenTransfers = tokenTransfersResult.items;
+  const rawTransactions = transactionsResult.items;
+
+  const transactions = await processActivity(
+    rawTokenTransfers,
+    rawTransactions,
+    chainConfig,
+    chainId,
+    address,
+    isOwnWallet,
+  );
+
+  const nextTokenTransfersExhausted =
+    tokenTransfersExhausted || !tokenTransfersResult.nextPageParams;
+  const nextTransactionsExhausted =
+    transactionsExhausted || !transactionsResult.nextPageParams;
+  const hasMore = !nextTokenTransfersExhausted || !nextTransactionsExhausted;
+
+  return {
+    transactions,
+    hasMore,
+    nextPageParam: hasMore
+      ? {
+          tokenTransfersCursor: tokenTransfersResult.nextPageParams,
+          tokenTransfersExhausted: nextTokenTransfersExhausted,
+          transactionsCursor: transactionsResult.nextPageParams,
+          transactionsExhausted: nextTransactionsExhausted,
+          rawTokenTransfers,
+          rawTransactions,
+        }
+      : undefined,
+  };
+}
+
+async function processActivity(
+  tokenTransfers: BlockscoutTokenTransfer[],
+  transactions: BlockscoutTransaction[],
+  chainConfig: ChainActivityConfig,
+  chainId: number,
+  address: string,
+  isOwnWallet: boolean,
+) {
   const normalizedTokenTransfers = tokenTransfers
     .map((transfer) => normalizeTokenTransfer(transfer, address, isOwnWallet))
     .filter((transaction): transaction is NormalizedTransaction => Boolean(transaction));
@@ -190,15 +268,31 @@ export async function fetchAddressActivity(
   );
 }
 
-async function fetchBlockscoutList<T>(url: string) {
-  const response = await fetch(url);
+function buildPaginatedUrl(baseUrl: string, cursor: BlockscoutCursor) {
+  if (!cursor) {
+    return baseUrl;
+  }
+
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(cursor)) {
+    params.set(key, String(value));
+  }
+
+  return `${baseUrl}?${params.toString()}`;
+}
+
+async function fetchBlockscoutPage<T>(baseUrl: string, cursor: BlockscoutCursor) {
+  const response = await fetch(buildPaginatedUrl(baseUrl, cursor));
 
   if (!response.ok) {
     throw new Error('Could not load transaction history.');
   }
 
   const data = (await response.json()) as BlockscoutListResponse<T>;
-  return data.items ?? [];
+  return {
+    items: data.items ?? [],
+    nextPageParams: data.next_page_params ?? null,
+  };
 }
 
 // Whether an address is a contract never changes once it's deployed, so

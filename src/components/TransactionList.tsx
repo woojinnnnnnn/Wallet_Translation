@@ -5,26 +5,32 @@ import { TransactionCard } from './TransactionCard';
 
 export function TransactionList({
   activeChainSymbol,
+  canLoadMore,
   chain,
   copiedAddress,
   copiedTransactionId,
   expandedTransactionId,
   isConnected,
   isFetching,
+  isFetchingMore,
   onCopyAddress,
   onCopyHash,
+  onLoadMore,
   onToggleTransaction,
   transactions,
 }: {
   activeChainSymbol?: string;
+  canLoadMore: boolean;
   chain?: Chain;
   copiedAddress: string | null;
   copiedTransactionId: string | null;
   expandedTransactionId: string | null;
   isConnected: boolean;
   isFetching: boolean;
+  isFetchingMore: boolean;
   onCopyAddress: (address: string) => void;
   onCopyHash: (hash: string) => void;
+  onLoadMore: () => void;
   onToggleTransaction: (transactionId: string) => void;
   transactions: NormalizedTransaction[];
 }) {
@@ -56,6 +62,16 @@ export function TransactionList({
             transaction={transaction}
           />
         ))}
+      {!isFetching && canLoadMore && (
+        <button
+          className="load-more-button"
+          disabled={isFetchingMore}
+          onClick={onLoadMore}
+          type="button"
+        >
+          {isFetchingMore ? 'Loading more…' : 'Load more'}
+        </button>
+      )}
     </section>
   );
 }

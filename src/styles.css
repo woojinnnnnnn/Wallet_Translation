@@ -927,6 +927,30 @@ h1 {
   text-align: center;
 }
 
+.load-more-button {
+  min-height: 40px;
+  margin-top: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  color: #475569;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 16px;
+}
+
+.load-more-button:hover:not(:disabled) {
+  border-color: rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+}
+
+.load-more-button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 /* ── Skeleton cards ──────────────────────────────────────── */
 
 .skeleton-card {
@@ -1524,6 +1548,17 @@ h1 {
   background: rgba(255, 255, 255, 0.02);
   border-color: rgba(255, 255, 255, 0.07);
   color: #3d4e65;
+}
+
+[data-theme="dark"] .load-more-button {
+  border-color: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+}
+[data-theme="dark"] .load-more-button:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.20);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
 }
 
 [data-theme="dark"] .transaction-summary-button:focus-visible {

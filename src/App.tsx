@@ -33,7 +33,10 @@ function App() {
   const {
     activityQuery,
     activityRange,
+    canLoadMore,
     isActivityUnsupported,
+    isFetchingMore,
+    loadMore,
     setActivityRange,
     transactions,
   } = useWalletActivity({
@@ -43,6 +46,9 @@ function App() {
     isOwnWallet: !isManualMode,
   });
   const activeChainSymbol = getChainSymbol(effectiveChain?.id);
+  // "Load more" only ever appends further activity — the existing list
+  // should stay visible while it's in flight, not get replaced by skeletons.
+  const isInitialFetching = activityQuery.isFetching && !isFetchingMore;
 
   function toggleTransaction(transactionId: string) {
     setExpandedTransactionId((currentId) =>
@@ -101,7 +107,7 @@ function App() {
 
       <SummaryStrip
         isConnected={effectiveIsConnected}
-        isFetching={activityQuery.isFetching}
+        isFetching={isInitialFetching}
         transactionCount={transactions.length}
       />
 
@@ -118,14 +124,17 @@ function App() {
 
       <TransactionList
         activeChainSymbol={activeChainSymbol}
+        canLoadMore={canLoadMore}
         chain={effectiveChain}
         copiedAddress={copiedAddress}
         copiedTransactionId={copiedTransactionId}
         expandedTransactionId={expandedTransactionId}
         isConnected={effectiveIsConnected}
-        isFetching={activityQuery.isFetching}
+        isFetching={isInitialFetching}
+        isFetchingMore={isFetchingMore}
         onCopyAddress={copyAddress}
         onCopyHash={copyTransactionHash}
+        onLoadMore={loadMore}
         onToggleTransaction={toggleTransaction}
         transactions={transactions}
       />
