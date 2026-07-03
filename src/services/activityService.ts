@@ -69,20 +69,39 @@ type BlockscoutListResponse<T> = {
 type ChainActivityConfig = {
   apiBaseUrl: string;
   nativeSymbol: string;
+  // Real contract addresses for widely-held tokens, keyed by the token's
+  // normalized symbol (see normalizeSymbolForComparison). Dust/address-poisoning
+  // transactions frequently spoof these symbols (e.g. a lookalike "USDT") on a
+  // contract that isn't the genuine one — same trick as native-currency
+  // impersonation below, just for tokens instead of the chain's native asset.
+  protectedTokens?: Record<string, string>;
 };
 
 const chainActivityConfig: Record<number, ChainActivityConfig> = {
   1: {
     apiBaseUrl: 'https://eth.blockscout.com/api/v2',
     nativeSymbol: 'ETH',
+    protectedTokens: {
+      USDT: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+      USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      DAI: '0x6b175474e89094c44da98b954eedeac495271d0f',
+    },
   },
   8453: {
     apiBaseUrl: 'https://base.blockscout.com/api/v2',
     nativeSymbol: 'ETH',
+    protectedTokens: {
+      USDC: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+      DAI: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb',
+    },
   },
   42161: {
     apiBaseUrl: 'https://arbitrum.blockscout.com/api/v2',
     nativeSymbol: 'ETH',
+    protectedTokens: {
+      USDC: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
+      DAI: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+    },
   },
   11155111: {
     apiBaseUrl: 'https://eth-sepolia.blockscout.com/api/v2',
@@ -196,9 +215,7 @@ async function processActivity(
   isOwnWallet: boolean,
 ) {
   const normalizedTokenTransfers = tokenTransfers
-    .map((transfer) =>
-      normalizeTokenTransfer(transfer, address, isOwnWallet, chainConfig.nativeSymbol),
-    )
+    .map((transfer) => normalizeTokenTransfer(transfer, address, isOwnWallet, chainConfig))
     .filter((transaction): transaction is NormalizedTransaction => Boolean(transaction));
 
   const normalizedNativeTransfers = transactions
@@ -438,10 +455,19 @@ const CONFUSABLE_LETTERS: Record<string, string> = {
  * format characters (category Mn/Me/Cf — this is exactly how a real spoofed
  * token symbol we found looked: "E" + U+17B5 + "Τ" (Greek Tau) + U+17B5 +
  * "H"), then maps known look-alike letters back to Latin before comparing.
+ *
+ * Must decompose via NFKD, not recompose via NFKC: a plain "T" plus a
+ * combining mark (e.g. U+0323 COMBINING DOT BELOW) has a canonical
+ * precomposed form ("Ṭ", U+1E6C) that NFKC would merge into — and the
+ * merged single codepoint is a letter, not a mark, so it survives the
+ * Mn/Me/Cf strip below untouched and evades detection entirely (a real
+ * spoofed "ETH" found in the wild used exactly this trick). NFKD instead
+ * splits any such precomposed letter back into base + mark so the strip
+ * still catches it.
  */
 function normalizeSymbolForComparison(symbol: string): string {
   return symbol
-    .normalize('NFKC')
+    .normalize('NFKD')
     .replace(/[\p{Mn}\p{Me}\p{Cf}\s]/gu, '')
     .split('')
     .map((char) => CONFUSABLE_LETTERS[char] ?? char)
@@ -449,11 +475,37 @@ function normalizeSymbolForComparison(symbol: string): string {
     .toUpperCase();
 }
 
+// A token contract can set its symbol to anything — neither the native
+// currency symbol nor well-known token symbols like "USDT" are reserved.
+// Naming an ERC-20 exactly like one of these is a known scam pattern (it
+// looks identical to the real asset everywhere the symbol is shown), and
+// it's also *why* an impersonating token has no CoinGecko price: the price
+// lookup keys on tokenContractAddress, and the spoofing contract isn't the
+// real, listed asset.
+function detectSymbolImpersonation(
+  symbol: string,
+  tokenContractAddress: string | undefined,
+  chainConfig: ChainActivityConfig,
+): { impersonatedSymbol: string } | undefined {
+  const normalizedSymbol = normalizeSymbolForComparison(symbol);
+
+  if (normalizedSymbol === normalizeSymbolForComparison(chainConfig.nativeSymbol)) {
+    return { impersonatedSymbol: chainConfig.nativeSymbol };
+  }
+
+  const realAddress = chainConfig.protectedTokens?.[normalizedSymbol];
+  if (realAddress && tokenContractAddress?.toLowerCase() !== realAddress) {
+    return { impersonatedSymbol: normalizedSymbol };
+  }
+
+  return undefined;
+}
+
 function normalizeTokenTransfer(
   transfer: BlockscoutTokenTransfer,
   ownerAddress: string,
   isOwnWallet: boolean,
-  nativeSymbol: string,
+  chainConfig: ChainActivityConfig,
 ): NormalizedTransaction | undefined {
   const fromHash = transfer.from?.hash ?? '';
   const toHash = transfer.to?.hash ?? '';
@@ -473,14 +525,7 @@ function normalizeTokenTransfer(
   const walletPhrase = isOwnWallet ? 'your wallet' : 'this wallet';
   const tokenContractAddress = transfer.token?.address ?? undefined;
 
-  // A token contract can set its symbol to anything — "ETH" isn't reserved.
-  // Naming an ERC-20 exactly like the chain's native currency is a known
-  // scam pattern (it looks identical to a real ETH movement everywhere the
-  // symbol is shown), and it's also *why* this has no CoinGecko price: the
-  // lookup keys on tokenContractAddress, and no such "ETH" contract is a
-  // real, listed asset.
-  const impersonatesNative =
-    normalizeSymbolForComparison(symbol) === normalizeSymbolForComparison(nativeSymbol);
+  const impersonation = detectSymbolImpersonation(symbol, tokenContractAddress, chainConfig);
 
   return {
     id: transfer.transaction_hash,
@@ -490,14 +535,14 @@ function normalizeTokenTransfer(
     to,
     toAddress,
     tokenContractAddress,
-    asset: impersonatesNative ? `${symbol} (token)` : symbol,
+    asset: impersonation ? `${symbol} (token)` : symbol,
     amount,
     risk:
       getScamOverride(counterparty) ??
-      (impersonatesNative
+      (impersonation
         ? {
             level: 'high',
-            reason: `This is a token contract calling itself "${symbol}" — not real ${nativeSymbol}. Likely impersonating the native currency.`,
+            reason: `This is a token contract calling itself "${symbol}" — not the real ${impersonation.impersonatedSymbol}. Likely impersonating a well-known token.`,
           }
         : getTransferRisk(direction)),
     summary:
