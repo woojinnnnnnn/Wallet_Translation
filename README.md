@@ -20,7 +20,9 @@ Wallet, etc.) are not supported yet.
 
 ![Wallet activity translator showing sample transactions with risk warnings](docs/screenshot.png)
 
-![Demo: connecting a wallet and viewing testnet activity](docs/demo.gif)
+![Demo: connecting a wallet and viewing live mainnet activity](docs/live_demo_v2.gif)
+
+![Demo: looking up any address without connecting a wallet](docs/serach_demo.gif)
 
 ## Features
 
