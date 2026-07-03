@@ -1,6 +1,7 @@
 # Wallet Transaction Viewer
 
-**Live demo:** https://wallet0translator.wallet0app.workers.dev
+**Live demo:** https://wallet0translator.wallet0app.workers.dev  
+**Write-up:** [Problem, solution, architecture, and the bugs found along the way](https://spicy-hail-09c.notion.site/Wallet_Translation-391ba6cf3ecd80b6b774dea9633c1dc2)
 
 A React + TypeScript MVP that translates raw wallet activity into a plain-language
 "who moved what, where, and how risky it was" feed — instead of a raw list of
