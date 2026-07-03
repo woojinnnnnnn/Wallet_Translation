@@ -9,9 +9,14 @@ const GOPLUS_SUPPORTED_CHAINS: Record<number, string> = {
 
 const SECURITY_CACHE_TTL_MS = 15 * 60_000;
 
+// GoPlus also returns `is_blacklisted`, deliberately not mapped here: it
+// means "this contract has a blacklist/freeze function," which is standard
+// on regulated stablecoins (USDT always reports it) rather than a sign of
+// malice. Surfacing it as a risk flag made every plain USDT transfer show
+// as high risk. The scam pattern it might otherwise catch (selectively
+// blocking a victim from selling) is already covered by isHoneypot/cannotSell.
 type GoPlusTokenFlags = {
   is_honeypot?: string;
-  is_blacklisted?: string;
   cannot_sell_all?: string;
   buy_tax?: string;
   sell_tax?: string;
@@ -25,7 +30,6 @@ type GoPlusResponse = {
 
 export type TokenSecurityFlags = {
   isHoneypot: boolean;
-  isBlacklisted: boolean;
   cannotSell: boolean;
   hasHighTax: boolean;
   isClosedSource: boolean;
@@ -74,7 +78,6 @@ const tokenSecurityCache = new TtlCache<TokenSecurityFlags>(SECURITY_CACHE_TTL_M
 
 const CLEAN_TOKEN_FLAGS: TokenSecurityFlags = {
   isHoneypot: false,
-  isBlacklisted: false,
   cannotSell: false,
   hasHighTax: false,
   isClosedSource: false,
@@ -220,7 +223,6 @@ export async function fetchTokenSecurity(
       const parsed: TokenSecurityFlags = rawFlags
         ? {
             isHoneypot: rawFlags.is_honeypot === '1',
-            isBlacklisted: rawFlags.is_blacklisted === '1',
             cannotSell: rawFlags.cannot_sell_all === '1',
             hasHighTax:
               Number(rawFlags.sell_tax ?? '0') > 0.1 ||

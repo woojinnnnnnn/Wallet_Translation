@@ -27,7 +27,7 @@ type BlockscoutTokenTransfer = {
   to?: BlockscoutAddress | null;
   timestamp?: string;
   token?: {
-    address?: string | null;
+    address_hash?: string | null;
     decimals?: string | null;
     symbol?: string | null;
     type?: string | null;
@@ -523,7 +523,7 @@ function normalizeTokenTransfer(
   const toAddress = transfer.to?.hash ?? '';
   const counterparty = direction === 'sent' ? transfer.to : transfer.from;
   const walletPhrase = isOwnWallet ? 'your wallet' : 'this wallet';
-  const tokenContractAddress = transfer.token?.address ?? undefined;
+  const tokenContractAddress = transfer.token?.address_hash ?? undefined;
 
   const impersonation = detectSymbolImpersonation(symbol, tokenContractAddress, chainConfig);
 
@@ -1094,12 +1094,6 @@ function applyTokenSecurity(
           level: 'high' as const,
           reason: 'Honeypot detected — selling this token may be impossible.',
         },
-      };
-    }
-    if (flags.isBlacklisted) {
-      return {
-        ...tx,
-        risk: { level: 'high' as const, reason: 'This token address is blacklisted.' },
       };
     }
     if (flags.cannotSell) {
