@@ -41,6 +41,7 @@ const riskGuideSections: Array<{
       'The spender address itself is flagged as malicious.',
       'The counterparty address is flagged as a scam by Blockscout.',
       "A transfer that left your wallet but was executed by another address, not you — likely using an approval you granted earlier.",
+      'A token contract whose symbol impersonates the native currency (e.g. an ERC-20 called "ETH") — a common way to disguise a worthless token as a real transfer.',
     ],
   },
   {

@@ -196,7 +196,9 @@ async function processActivity(
   isOwnWallet: boolean,
 ) {
   const normalizedTokenTransfers = tokenTransfers
-    .map((transfer) => normalizeTokenTransfer(transfer, address, isOwnWallet))
+    .map((transfer) =>
+      normalizeTokenTransfer(transfer, address, isOwnWallet, chainConfig.nativeSymbol),
+    )
     .filter((transaction): transaction is NormalizedTransaction => Boolean(transaction));
 
   const normalizedNativeTransfers = transactions
@@ -417,10 +419,41 @@ function applyExecutorRisk(
   });
 }
 
+// Greek/Cyrillic letters visually indistinguishable from Latin ones in most
+// fonts — the exact trick a spoofed "ETH" symbol used (Greek Τ instead of
+// Latin T). Deliberately small: just enough to cover letters that show up in
+// native-currency symbols like ETH, not a general confusables table.
+const CONFUSABLE_LETTERS: Record<string, string> = {
+  Α: 'A', Β: 'B', Ε: 'E', Ζ: 'Z', Η: 'H', Ι: 'I', Κ: 'K', Μ: 'M', Ν: 'N',
+  Ο: 'O', Ρ: 'P', Τ: 'T', Υ: 'Y', Χ: 'X',
+  А: 'A', В: 'B', Е: 'E', К: 'K', М: 'M', Н: 'H', О: 'O', Р: 'P', С: 'C',
+  Т: 'T', Х: 'X', У: 'Y',
+};
+
+/**
+ * A raw string-equality check on a token symbol is trivially defeated by
+ * zero-width/combining Unicode characters spliced between visible letters,
+ * or by swapping in a same-looking Greek/Cyrillic letter — both render as
+ * "ETH" but neither is the ASCII string "ETH". Strips combining marks and
+ * format characters (category Mn/Me/Cf — this is exactly how a real spoofed
+ * token symbol we found looked: "E" + U+17B5 + "Τ" (Greek Tau) + U+17B5 +
+ * "H"), then maps known look-alike letters back to Latin before comparing.
+ */
+function normalizeSymbolForComparison(symbol: string): string {
+  return symbol
+    .normalize('NFKC')
+    .replace(/[\p{Mn}\p{Me}\p{Cf}\s]/gu, '')
+    .split('')
+    .map((char) => CONFUSABLE_LETTERS[char] ?? char)
+    .join('')
+    .toUpperCase();
+}
+
 function normalizeTokenTransfer(
   transfer: BlockscoutTokenTransfer,
   ownerAddress: string,
   isOwnWallet: boolean,
+  nativeSymbol: string,
 ): NormalizedTransaction | undefined {
   const fromHash = transfer.from?.hash ?? '';
   const toHash = transfer.to?.hash ?? '';
@@ -438,6 +471,16 @@ function normalizeTokenTransfer(
   const toAddress = transfer.to?.hash ?? '';
   const counterparty = direction === 'sent' ? transfer.to : transfer.from;
   const walletPhrase = isOwnWallet ? 'your wallet' : 'this wallet';
+  const tokenContractAddress = transfer.token?.address ?? undefined;
+
+  // A token contract can set its symbol to anything — "ETH" isn't reserved.
+  // Naming an ERC-20 exactly like the chain's native currency is a known
+  // scam pattern (it looks identical to a real ETH movement everywhere the
+  // symbol is shown), and it's also *why* this has no CoinGecko price: the
+  // lookup keys on tokenContractAddress, and no such "ETH" contract is a
+  // real, listed asset.
+  const impersonatesNative =
+    normalizeSymbolForComparison(symbol) === normalizeSymbolForComparison(nativeSymbol);
 
   return {
     id: transfer.transaction_hash,
@@ -446,10 +489,17 @@ function normalizeTokenTransfer(
     fromAddress,
     to,
     toAddress,
-    tokenContractAddress: transfer.token?.address ?? undefined,
-    asset: symbol,
+    tokenContractAddress,
+    asset: impersonatesNative ? `${symbol} (token)` : symbol,
     amount,
-    risk: getScamOverride(counterparty) ?? getTransferRisk(direction),
+    risk:
+      getScamOverride(counterparty) ??
+      (impersonatesNative
+        ? {
+            level: 'high',
+            reason: `This is a token contract calling itself "${symbol}" — not real ${nativeSymbol}. Likely impersonating the native currency.`,
+          }
+        : getTransferRisk(direction)),
     summary:
       direction === 'sent'
         ? `${symbol} left ${walletPhrase}.`
