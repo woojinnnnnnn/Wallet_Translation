@@ -8,6 +8,7 @@ import { SummaryStrip } from './components/SummaryStrip';
 import { TransactionList } from './components/TransactionList';
 import { WalletHeader } from './components/WalletHeader';
 import { getChainSymbol, supportedChains } from './constants/chains';
+import { useBookmarks } from './hooks/useBookmarks';
 import { useChainHealth } from './hooks/useChainHealth';
 import { useTheme } from './hooks/useTheme';
 import { useWalletActivity } from './hooks/useWalletActivity';
@@ -24,6 +25,7 @@ function App() {
   const [isRiskGuideOpen, setIsRiskGuideOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const chainHealth = useChainHealth();
+  const bookmarks = useBookmarks();
   const wallet = useWalletConnection();
   const [manualAddress, setManualAddress] = useState<string | null>(null);
   const [manualChainId, setManualChainId] = useState<number>(mainnet.id);
@@ -103,8 +105,12 @@ function App() {
 
       <AddressLookup
         activeAddress={manualAddress}
+        bookmarks={bookmarks.bookmarks}
+        isBookmarked={bookmarks.isBookmarked}
+        onAddBookmark={bookmarks.addBookmark}
         onClear={() => setManualAddress(null)}
         onLookup={setManualAddress}
+        onRemoveBookmark={bookmarks.removeBookmark}
       />
 
       <SummaryStrip

@@ -205,6 +205,68 @@ h1 {
 .address-lookup-error { margin: 6px 0 0; color: #ef4444; font-size: 13px; }
 .address-lookup-active { margin: 6px 0 0; color: #64748b; font-size: 13px; }
 
+.bookmark-toggle {
+  margin-left: 6px;
+  border: 0;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+  vertical-align: -1px;
+}
+
+.bookmark-toggle:hover { color: #f59e0b; }
+
+.bookmark-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+
+.bookmark-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  padding: 0 4px 0 12px;
+}
+
+.bookmark-chip-address {
+  border: 0;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  padding: 6px 0;
+}
+
+.bookmark-chip:hover .bookmark-chip-address { color: #0f172a; }
+
+.bookmark-chip-remove {
+  min-width: 20px;
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.bookmark-chip-remove:hover { background: rgba(0, 0, 0, 0.06); color: #ef4444; }
+
 /* ── Summary strip ───────────────────────────────────────── */
 
 .summary-strip {
@@ -1396,6 +1458,17 @@ h1 {
   color: #f1f5f9;
 }
 [data-theme="dark"] .address-lookup-active { color: #94a3b8; }
+
+[data-theme="dark"] .bookmark-toggle { color: #475569; }
+[data-theme="dark"] .bookmark-toggle:hover { color: #f59e0b; }
+
+[data-theme="dark"] .bookmark-chip {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .bookmark-chip-address { color: #94a3b8; }
+[data-theme="dark"] .bookmark-chip:hover .bookmark-chip-address { color: #f1f5f9; }
+[data-theme="dark"] .bookmark-chip-remove:hover { background: rgba(255, 255, 255, 0.10); color: #f87171; }
 
 /* Summary strip */
 [data-theme="dark"] .summary-strip div {
