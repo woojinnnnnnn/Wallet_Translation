@@ -28,6 +28,11 @@ export type NormalizedTransaction = {
    * that didn't).
    */
   riskCheckIncomplete?: boolean;
+  // True when the USD price lookup for this transaction's asset failed
+  // (rate-limited/timed out/network error) rather than genuinely finding no
+  // listed price — kept separate so "no price data" isn't misread as "this
+  // token has no market" when it just means "we couldn't check right now".
+  priceCheckFailed?: boolean;
 };
 
 export type TransactionRisk = {

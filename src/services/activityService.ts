@@ -268,7 +268,7 @@ async function processActivity(
     ),
   ];
 
-  const [tokenSecurity, priceMap, addressSecurity, executedByOtherHashes] = await Promise.all([
+  const [tokenSecurity, usdPrices, addressSecurity, executedByOtherHashes] = await Promise.all([
     fetchTokenSecurity(chainId, collectTokenAddresses(sorted)),
     fetchUsdPrices(chainId, sorted),
     fetchAddressSecurity(collectSpenderAddresses(sorted)),
@@ -286,7 +286,8 @@ async function processActivity(
     applyAddressSecurity(
       applyUsdPrices(
         applyTokenSecurity(sorted, tokenSecurity.flags, tokenSecurity.failedAddresses),
-        priceMap,
+        usdPrices.priceMap,
+        usdPrices.failedKeys,
       ),
       addressSecurity.flags,
       addressSecurity.failedAddresses,
@@ -1050,13 +1051,19 @@ function compactUnique(values: string[]) {
 function applyUsdPrices(
   transactions: NormalizedTransaction[],
   priceMap: Map<string, number>,
+  failedKeys: Set<string>,
 ): NormalizedTransaction[] {
-  if (priceMap.size === 0) return transactions;
+  if (priceMap.size === 0 && failedKeys.size === 0) return transactions;
 
   return transactions.map((tx) => {
     if (tx.type !== 'sent' && tx.type !== 'received') return tx;
 
     const key = tx.tokenContractAddress?.toLowerCase() ?? tx.asset;
+
+    if (failedKeys.has(key)) {
+      return { ...tx, priceCheckFailed: true };
+    }
+
     const price = priceMap.get(key);
     if (price === undefined) return tx;
 

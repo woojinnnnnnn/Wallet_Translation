@@ -39,7 +39,8 @@ export function TransactionCard({
   const isUnpricedReceivedToken =
     transaction.type === 'received' &&
     Boolean(transaction.tokenContractAddress) &&
-    !transaction.amountUsd;
+    !transaction.amountUsd &&
+    !transaction.priceCheckFailed;
 
   const stripeClass =
     riskLevel === 'high' ? 'card-stripe-danger' :
