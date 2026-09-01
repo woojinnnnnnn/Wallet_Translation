@@ -141,7 +141,7 @@ h1 {
   padding: 0 6px;
 }
 
-.status { margin: 12px 0 0; font-size: 14px; font-weight: 700; }
+.status { font-size: 14px; font-weight: 700; }
 .status-error { color: #ef4444; }
 .status-error a { color: inherit; text-decoration: underline; }
 
