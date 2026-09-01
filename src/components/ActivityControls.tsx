@@ -16,14 +16,26 @@ const CHAIN_HEALTH_LABEL: Record<ChainHealthStatus, string> = {
   down: 'API not responding',
 };
 
+function chainHealthLabel(status?: ChainHealthStatus) {
+  return status ? CHAIN_HEALTH_LABEL[status] : 'Checking API status…';
+}
+
 function ChainHealthDot({ status }: { status?: ChainHealthStatus }) {
   return (
     <span
       className={`chain-health-dot chain-health-${status ?? 'checking'}`}
       aria-hidden="true"
-      title={status ? CHAIN_HEALTH_LABEL[status] : 'Checking API status…'}
+      title={chainHealthLabel(status)}
     />
   );
+}
+
+// The dot is color-only and its title tooltip never shows on touch — this
+// keeps the status in the button's accessible name (after the chain name,
+// so it reads "Ethereum ETH — API responding normally" in that order) for
+// screen readers and anyone else who can't rely on hover or color alone.
+function ChainHealthLabel({ status }: { status?: ChainHealthStatus }) {
+  return <span className="sr-only">{` — ${chainHealthLabel(status)}`}</span>;
 }
 
 export function ActivityControls({
@@ -80,6 +92,7 @@ export function ActivityControls({
               <ChainHealthDot status={chainHealth?.[chain.id]} />
               <span>{chain.name}</span>
               <small>{getChainSymbol(chain.id)}</small>
+              <ChainHealthLabel status={chainHealth?.[chain.id]} />
             </button>
           ))}
           <div className="testnet-divider" />
@@ -104,6 +117,7 @@ export function ActivityControls({
                 <ChainHealthDot status={chainHealth?.[chain.id]} />
                 <span>{chain.name}</span>
                 <small>{getChainSymbol(chain.id)}</small>
+                <ChainHealthLabel status={chainHealth?.[chain.id]} />
               </button>
             ))}
         </div>

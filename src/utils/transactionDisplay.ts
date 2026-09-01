@@ -30,7 +30,7 @@ export function getTypeMeta(type: TransactionType) {
   }
 
   if (type === 'approval') {
-    return { icon: 'OK', label: 'Approval', tone: 'approval' };
+    return { icon: 'AP', label: 'Approval', tone: 'approval' };
   }
 
   if (type === 'swap') {

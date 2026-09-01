@@ -32,6 +32,14 @@ export function TransactionCard({
   const explorerUrl = getExplorerTransactionUrl(chain?.id, transaction.id);
   const riskLevel = transaction.risk.level;
   const showBanner = riskLevel === 'high' || riskLevel === 'medium';
+  // A received token with no USD price usually means no exchange lists it —
+  // the same signature as the unsolicited-airdrop spam this app exists to
+  // flag (see the "SOS"/"MONKEY"/etc. pattern), though a genuinely new,
+  // legitimate token would look identical. Worded as a hint, not a verdict.
+  const isUnpricedReceivedToken =
+    transaction.type === 'received' &&
+    Boolean(transaction.tokenContractAddress) &&
+    !transaction.amountUsd;
 
   const stripeClass =
     riskLevel === 'high' ? 'card-stripe-danger' :
@@ -87,8 +95,17 @@ export function TransactionCard({
           <div className={`amount-block amount-${typeMeta.tone}`}>
             <strong>{transaction.amount}</strong>
             <span className="asset-symbol">{transaction.asset}</span>
-            {transaction.amountUsd && (
+            {transaction.amountUsd ? (
               <span className="amount-usd">{transaction.amountUsd}</span>
+            ) : (
+              isUnpricedReceivedToken && (
+                <span
+                  className="amount-unpriced"
+                  title="No exchange lists a price for this token — a common sign of unsolicited airdrop spam, though not proof by itself."
+                >
+                  No price data
+                </span>
+              )
             )}
           </div>
           <span className="expand-indicator">
