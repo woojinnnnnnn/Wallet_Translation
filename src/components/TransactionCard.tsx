@@ -83,17 +83,19 @@ export function TransactionCard({
             <span title={transaction.toAddress}>{transaction.to}</span>
           </div>
         </div>
-        <div className={`amount-block amount-${typeMeta.tone}`}>
-          <strong>{transaction.amount}</strong>
-          <span className="asset-symbol">{transaction.asset}</span>
-          {transaction.amountUsd && (
-            <span className="amount-usd">{transaction.amountUsd}</span>
-          )}
+        <div className="amount-expand-row">
+          <div className={`amount-block amount-${typeMeta.tone}`}>
+            <strong>{transaction.amount}</strong>
+            <span className="asset-symbol">{transaction.asset}</span>
+            {transaction.amountUsd && (
+              <span className="amount-usd">{transaction.amountUsd}</span>
+            )}
+          </div>
+          <span className="expand-indicator">
+            <span className={`expand-chevron${isExpanded ? ' expand-chevron-open' : ''}`}>›</span>
+            {isExpanded ? 'Hide' : 'Details'}
+          </span>
         </div>
-        <span className="expand-indicator">
-          <span className={`expand-chevron${isExpanded ? ' expand-chevron-open' : ''}`}>›</span>
-          {isExpanded ? 'Hide' : 'Details'}
-        </span>
       </button>
 
       <div className={`card-expandable${isExpanded ? ' card-expandable-open' : ''}`}>
@@ -172,12 +174,12 @@ export function TransactionCard({
                 </small>
               </button>
             </div>
-            <div>
+            <div className="detail-cell-risk-reason">
               <span>Risk reason</span>
               <strong>{transaction.risk.reason}</strong>
             </div>
             {transaction.riskCheckIncomplete && (
-              <div>
+              <div className="detail-cell-risk-check">
                 <span>Risk check</span>
                 <strong className="risk-check-incomplete-text">
                   Incomplete — didn't finish in time, may be outdated

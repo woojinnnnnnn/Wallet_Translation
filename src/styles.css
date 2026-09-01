@@ -359,11 +359,13 @@ h1 {
 
 .range-option {
   min-height: 24px;
+  justify-content: center;
   border: 0;
   border-radius: 7px;
   background: transparent;
   font-size: 12px;
   padding: 0 8px;
+  text-align: center;
 }
 
 .chain-option:hover {
@@ -653,6 +655,13 @@ h1 {
 
 .route-arrow { color: #cbd5e1; }
 
+/* On desktop this wrapper is invisible to the grid — amount-block and
+   expand-indicator keep acting as direct children of transaction-summary-button's
+   4-column grid. Mobile switches it to a flex row (see responsive section). */
+.amount-expand-row {
+  display: contents;
+}
+
 .amount-block {
   display: grid;
   gap: 3px;
@@ -678,7 +687,7 @@ h1 {
 
 .asset-symbol {
   width: fit-content;
-  justify-self: end;
+  justify-self: left;
   border: 1.5px solid #e2e8f0;
   border-radius: 999px;
   background: #f8fafc;
@@ -1194,16 +1203,89 @@ h1 {
   .toolbar { align-items: stretch; flex-direction: column; margin-bottom: 18px; padding-bottom: 18px; }
   h1 { font-size: 28px; }
   .wallet-actions { justify-content: flex-start; }
-  .summary-strip { grid-template-columns: 1fr; }
-  .chain-switcher { align-items: stretch; flex-direction: column; }
-  .switcher-group { align-items: flex-start; flex-direction: column; }
-  .range-group { flex-shrink: 1; }
+
+  .address-lookup-form { gap: 8px; }
+  .address-lookup-label { width: 100%; }
+  .address-lookup-input { min-width: 0; flex: 1 1 0; }
+  .address-lookup-submit { min-width: 62px; }
+  .address-lookup-clear { width: 100%; justify-content: center; }
+
+  .summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .summary-strip div { min-height: 64px; padding: 12px 14px; }
+  .summary-strip strong { font-size: 18px; line-height: 1.2; }
+  .summary-card-activity { order: 1; }
+  .summary-card-status { order: 2; }
+  .summary-card-networks { grid-column: 1 / -1; order: 3; }
+  .summary-card-networks strong { font-size: 15px; line-height: 1.35; }
+
+  .chain-switcher { align-items: stretch; flex-direction: column; gap: 12px; padding: 10px; }
+  .switcher-group { align-items: flex-start; flex-direction: column; width: 100%; }
+
+  /* Network chips remain compact without turning into a two-row grid. */
+  .switcher-options:not(.compact-options) {
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    width: 100%;
+  }
+  .switcher-options:not(.compact-options)::-webkit-scrollbar { display: none; }
+  .chain-option { flex: 0 0 auto; justify-content: center; padding: 0 11px; scroll-snap-align: start; }
+  /* Every current chain is ETH-denominated, so the symbol badge is redundant here. */
+  .chain-option small { display: none; }
+  .testnet-divider { display: none; }
+
+  /* Time range remains a full-width segmented control, with a smaller tap target. */
+  .range-group { flex-shrink: 1; width: 100%; }
+  .compact-options { width: 100%; }
+  .range-option { flex: 1; min-height: 32px; padding: 0 7px; }
+
   .transaction-summary-button { grid-template-columns: 36px minmax(0, 1fr); }
-  .amount-block { grid-column: 2; justify-items: start; text-align: left; }
-  .expand-indicator { grid-column: 2; justify-self: start; }
-  .transaction-details { grid-template-columns: 1fr; }
+
+  /* The tx hash chip in the topline duplicates the expanded detail panel */
+  .transaction-topline code { display: none; }
+
+  /* Route chips restate the type pill + title one time too many — quiet them down */
+  .route-line { opacity: 0.8; font-size: 11px; }
+  .route-line span:not(.route-arrow) { font-size: 10px; padding: 0 6px; }
+
+  /* Amount + Details collapse into one row instead of two stacked ones */
+  .amount-expand-row {
+    display: flex;
+    grid-column: 2;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .amount-block {
+    /*gap: 20px;*/
+    justify-items: start;
+    /*text-align: left;*/
+    transform: translateY(-12px);
+  }
+  .amount-block strong {
+    transform: translateY(-2px);
+    white-space: nowrap;
+  }
+  .amount-block .asset-symbol { transform: translateY(2px); }
+  .expand-indicator { flex-shrink: 0; }
+
+  .transaction-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .transaction-details div { padding: 11px 12px; }
+  .detail-cell-hash,
+  .detail-cell-risk-reason,
+  .detail-cell-risk-check { grid-column: 1 / -1; }
+  .transaction-details strong,
+  .transaction-details code { font-size: 12px; line-height: 1.35; }
   .transaction-actions { align-items: flex-start; flex-direction: column; }
   .movement-list { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 340px) {
+  .transaction-details { grid-template-columns: 1fr; }
 }
 
 /* ════════════════════════════════════════════════════════════

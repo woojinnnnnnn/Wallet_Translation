@@ -31,8 +31,16 @@
         document.getElementById('favicon-link').href = '/favicon-' + theme + '.png';
       })();
     </script>
-    <!-- Cloudflare Web Analytics -->
-    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "46f1b8696e6244a788e39fb090b0a3b1"}'></script>
+    <!-- Cloudflare Web Analytics (skipped on localhost, where the beacon request just errors with CORS) -->
+    <script>
+      if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        var cfBeacon = document.createElement('script');
+        cfBeacon.defer = true;
+        cfBeacon.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+        cfBeacon.setAttribute('data-cf-beacon', '{"token": "46f1b8696e6244a788e39fb090b0a3b1"}');
+        document.head.appendChild(cfBeacon);
+      }
+    </script>
     <!-- End Cloudflare Web Analytics -->
   </head>
   <body>
