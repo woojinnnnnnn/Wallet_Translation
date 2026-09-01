@@ -138,6 +138,7 @@ function App() {
         copiedAddress={copiedAddress}
         copiedTransactionId={copiedTransactionId}
         expandedTransactionId={expandedTransactionId}
+        hasError={Boolean(activityQuery.error)}
         isConnected={effectiveIsConnected}
         isFetching={isInitialFetching}
         isFetchingMore={isFetchingMore}

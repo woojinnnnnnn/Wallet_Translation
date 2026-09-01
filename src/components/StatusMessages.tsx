@@ -42,7 +42,11 @@ export function StatusMessages({
         </p>
       )}
       {activityError && (
-        <p className="status status-error">{activityError.message}</p>
+        <p className="status status-error">
+          {activityError.name === 'TypeError'
+            ? "Couldn't reach this network's API right now — it may be temporarily down. Try again shortly, or switch chains (check the status dot next to each network above)."
+            : activityError.message}
+        </p>
       )}
     </>
   );

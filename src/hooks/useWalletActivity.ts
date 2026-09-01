@@ -50,6 +50,13 @@ export function useWalletActivity({
     getNextPageParam: (lastPage) => lastPage.nextPageParam,
     enabled: Boolean(address && chainId && supportedActivityChain),
     staleTime: 60_000,
+    // The default (3 retries, exponential backoff) is built for transient
+    // blips — against a chain whose API is genuinely down, it just means a
+    // ~30s silent skeleton-loading stare before finally failing. One retry
+    // with a short fixed delay still absorbs a one-off hiccup without the
+    // long wait.
+    retry: 1,
+    retryDelay: 1_000,
   });
   // Each page already carries the full accumulated + re-grouped list (see
   // fetchAddressActivityPage), so the latest page IS the current dataset —

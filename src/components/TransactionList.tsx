@@ -10,6 +10,7 @@ export function TransactionList({
   copiedAddress,
   copiedTransactionId,
   expandedTransactionId,
+  hasError,
   isConnected,
   isFetching,
   isFetchingMore,
@@ -25,6 +26,7 @@ export function TransactionList({
   copiedAddress: string | null;
   copiedTransactionId: string | null;
   expandedTransactionId: string | null;
+  hasError: boolean;
   isConnected: boolean;
   isFetching: boolean;
   isFetchingMore: boolean;
@@ -41,7 +43,10 @@ export function TransactionList({
           <SkeletonCard key={i} delay={i * 90} />
         ))
       }
-      {!isFetching && isConnected && transactions.length === 0 && (
+      {/* A failed fetch already gets its own message via StatusMessages —
+          showing "no activity found" on top of that reads as two
+          contradictory answers to the same question. */}
+      {!isFetching && !hasError && isConnected && transactions.length === 0 && (
         <div className="empty-state">
           No recent movement history found for this wallet.
         </div>
