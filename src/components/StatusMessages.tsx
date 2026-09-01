@@ -17,7 +17,13 @@ export function StatusMessages({
 }) {
   return (
     <>
-      {connectError && (<p className="status status-error">{connectError.message}</p>)}
+      {connectError && (
+        <p className="status status-error">
+          {connectError.name === 'ProviderNotFoundError'
+            ? 'No wallet app was detected in this browser. Open this page inside a wallet app like MetaMask, or install the MetaMask extension.'
+            : connectError.message}
+        </p>
+      )}
       {switchChainError && (<p className="status status-error">{switchChainError.message}</p>)}
       {!hasInjectedConnector && (<p className="status status-error">No browser wallet extension was found.</p>)}
       {isActivityUnsupported && (<p className="status status-error">
