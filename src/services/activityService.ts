@@ -103,6 +103,14 @@ const chainActivityConfig: Record<number, ChainActivityConfig> = {
       DAI: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
     },
   },
+  10: {
+    apiBaseUrl: 'https://explorer.optimism.io/api/v2',
+    nativeSymbol: 'ETH',
+    protectedTokens: {
+      USDC: '0x0b2c639c533813f4aa9d7837caf62653d097ff85',
+      DAI: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+    },
+  },
   11155111: {
     apiBaseUrl: 'https://eth-sepolia.blockscout.com/api/v2',
     nativeSymbol: 'Sepolia ETH',

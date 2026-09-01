@@ -8,6 +8,7 @@ import { SummaryStrip } from './components/SummaryStrip';
 import { TransactionList } from './components/TransactionList';
 import { WalletHeader } from './components/WalletHeader';
 import { getChainSymbol, supportedChains } from './constants/chains';
+import { useChainHealth } from './hooks/useChainHealth';
 import { useTheme } from './hooks/useTheme';
 import { useWalletActivity } from './hooks/useWalletActivity';
 import { useWalletConnection } from './hooks/useWalletConnection';
@@ -22,6 +23,7 @@ function App() {
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [isRiskGuideOpen, setIsRiskGuideOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const chainHealth = useChainHealth();
   const wallet = useWalletConnection();
   const [manualAddress, setManualAddress] = useState<string | null>(null);
   const [manualChainId, setManualChainId] = useState<number>(mainnet.id);
@@ -114,6 +116,7 @@ function App() {
       <ActivityControls
         activeChain={effectiveChain}
         activityRange={activityRange}
+        chainHealth={chainHealth}
         isConnected={effectiveIsConnected}
         isSwitchingChain={isManualMode ? false : wallet.isSwitchingChain}
         onRangeChange={setActivityRange}

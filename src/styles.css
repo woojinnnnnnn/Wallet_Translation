@@ -358,6 +358,23 @@ h1 {
   padding: 0 5px;
 }
 
+.chain-health-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+.chain-health-checking { background: #cbd5e1; animation: chain-health-pulse 1.2s ease-in-out infinite; }
+.chain-health-ok       { background: #22c55e; }
+.chain-health-slow     { background: #f59e0b; }
+.chain-health-down     { background: #ef4444; }
+
+@keyframes chain-health-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+
 .range-option {
   min-height: 24px;
   justify-content: center;
@@ -688,7 +705,6 @@ h1 {
 
 .asset-symbol {
   width: fit-content;
-  justify-self: left;
   border: 1.5px solid #e2e8f0;
   border-radius: 999px;
   background: #f8fafc;
@@ -1688,4 +1704,5 @@ h1 {
   ::view-transition-old(root),
   ::view-transition-new(root) { animation: none; }
   .theme-icon { animation: none; }
+  .chain-health-checking { animation: none; opacity: 0.7; }
 }

@@ -7,11 +7,29 @@ import {
   testnetChains,
   type SupportedChainId,
 } from '../constants/chains';
+import type { ChainHealthStatus } from '../services/chainHealthService';
 import type { ActivityRange } from '../types/activity';
+
+const CHAIN_HEALTH_LABEL: Record<ChainHealthStatus, string> = {
+  ok: 'API responding normally',
+  slow: 'API responding slowly',
+  down: 'API not responding',
+};
+
+function ChainHealthDot({ status }: { status?: ChainHealthStatus }) {
+  return (
+    <span
+      className={`chain-health-dot chain-health-${status ?? 'checking'}`}
+      aria-hidden="true"
+      title={status ? CHAIN_HEALTH_LABEL[status] : 'Checking API status…'}
+    />
+  );
+}
 
 export function ActivityControls({
   activityRange,
   activeChain,
+  chainHealth,
   isConnected,
   isSwitchingChain,
   onRangeChange,
@@ -19,6 +37,7 @@ export function ActivityControls({
 }: {
   activityRange: ActivityRange;
   activeChain?: Chain;
+  chainHealth?: Record<number, ChainHealthStatus>;
   isConnected: boolean;
   isSwitchingChain: boolean;
   onRangeChange: (range: ActivityRange) => void;
@@ -58,6 +77,7 @@ export function ActivityControls({
               onClick={() => onSwitchChain(chain.id)}
               disabled={!isConnected || isSwitchingChain}
             >
+              <ChainHealthDot status={chainHealth?.[chain.id]} />
               <span>{chain.name}</span>
               <small>{getChainSymbol(chain.id)}</small>
             </button>
@@ -81,6 +101,7 @@ export function ActivityControls({
                 onClick={() => onSwitchChain(chain.id)}
                 disabled={!isConnected || isSwitchingChain}
               >
+                <ChainHealthDot status={chainHealth?.[chain.id]} />
                 <span>{chain.name}</span>
                 <small>{getChainSymbol(chain.id)}</small>
               </button>

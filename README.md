@@ -35,8 +35,8 @@ Wallet, etc.) are not supported yet.
 - **Swap & multi-transfer detection** — an outgoing + incoming pair in the same
   transaction is shown as one swap, not two unrelated transfers.
 - **USD estimates** on transfer amounts, via CoinGecko.
-- **Multi-chain** — Ethereum, Base, Arbitrum One, and Sepolia (testnet),
-  switchable from the header.
+- **Multi-chain** — Ethereum, Base, Arbitrum One, Optimism, and Sepolia
+  (testnet), switchable from the header.
 - **Time range filters** — Latest 12 / 7 days / 30 days / All, with a
   "Load more" button to page in older history for the 7d/30d/All views.
 - **Look up any address** — paste any address into the search box to view its
@@ -52,8 +52,8 @@ npm install
 npm run dev
 ```
 
-No API keys required — Ethereum, Base, Arbitrum, and Sepolia all use public
-Blockscout endpoints for activity data.
+No API keys required — Ethereum, Base, Arbitrum, Optimism, and Sepolia all use
+public Blockscout endpoints for activity data.
 
 ```bash
 npm run build    # type-check + production build
