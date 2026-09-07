@@ -3,9 +3,11 @@ import { mainnet } from 'wagmi/chains';
 import { AddressLookup } from './components/AddressLookup';
 import { ActivityControls } from './components/ActivityControls';
 import { RiskGuideModal } from './components/RiskGuideModal';
+import { SampleDataBanner } from './components/SampleDataBanner';
 import { StatusMessages } from './components/StatusMessages';
 import { SummaryStrip } from './components/SummaryStrip';
 import { TransactionList } from './components/TransactionList';
+import { WelcomePanel } from './components/WelcomePanel';
 import { WalletHeader } from './components/WalletHeader';
 import { getChainSymbol, supportedChains } from './constants/chains';
 import { useBookmarks } from './hooks/useBookmarks';
@@ -34,6 +36,8 @@ function App() {
     ? supportedChains.find((chain) => chain.id === manualChainId)
     : wallet.chain;
   const effectiveIsConnected = isManualMode || wallet.isConnected;
+  const isEntryScreen = !effectiveIsConnected;
+  const isShowingSampleActivity = !wallet.isConnected && !isManualMode;
   const {
     activityQuery,
     activityRange,
@@ -58,6 +62,10 @@ function App() {
     setExpandedTransactionId((currentId) =>
       currentId === transactionId ? null : transactionId,
     );
+  }
+
+  function lookUpAddress(address: string) {
+    setManualAddress(address);
   }
 
   async function copyTransactionHash(transactionId: string) {
@@ -86,68 +94,98 @@ function App() {
         isConnected={wallet.isConnected}
         isConnecting={wallet.isConnecting}
         onConnect={wallet.connectWallet}
-        onDisconnect={() => wallet.disconnect()}
+        onDisconnect={wallet.disconnect}
         onOpenRiskGuide={() => setIsRiskGuideOpen(true)}
         onToggleTheme={toggleTheme}
+        showWalletControl={!isEntryScreen}
         theme={theme}
       />
 
       <RiskGuideModal isOpen={isRiskGuideOpen} onClose={() => setIsRiskGuideOpen(false)} />
 
-      <StatusMessages
-        activityError={activityQuery.error as Error | null}
-        chain={wallet.chain}
-        connectError={wallet.connectError}
-        hasInjectedConnector={Boolean(wallet.injectedConnector)}
-        isActivityUnsupported={isActivityUnsupported}
-        switchChainError={wallet.switchChainError}
-      />
+      {(effectiveIsConnected || wallet.connectError || wallet.switchChainError) && (
+        <StatusMessages
+          activityError={activityQuery.error as Error | null}
+          chain={wallet.chain}
+          connectError={wallet.connectError}
+          hasInjectedConnector={Boolean(wallet.injectedConnector)}
+          isActivityUnsupported={isActivityUnsupported}
+          switchChainError={wallet.switchChainError}
+        />
+      )}
 
-      <AddressLookup
-        activeAddress={manualAddress}
-        bookmarks={bookmarks.bookmarks}
-        isBookmarked={bookmarks.isBookmarked}
-        onAddBookmark={bookmarks.addBookmark}
-        onClear={() => setManualAddress(null)}
-        onLookup={setManualAddress}
-        onRemoveBookmark={bookmarks.removeBookmark}
-      />
+      {isEntryScreen ? (
+        <WelcomePanel
+          hasInjectedConnector={Boolean(wallet.injectedConnector)}
+          isConnecting={wallet.isConnecting}
+          onConnect={wallet.connectWallet}
+        >
+          <AddressLookup
+            activeAddress={manualAddress}
+            bookmarks={bookmarks.bookmarks}
+            isBookmarked={bookmarks.isBookmarked}
+            onAddBookmark={bookmarks.addBookmark}
+            onClear={() => setManualAddress(null)}
+            onLookup={lookUpAddress}
+            onRemoveBookmark={bookmarks.removeBookmark}
+          />
+        </WelcomePanel>
+      ) : (
+        <>
+          <AddressLookup
+            activeAddress={manualAddress}
+            bookmarks={bookmarks.bookmarks}
+            isBookmarked={bookmarks.isBookmarked}
+            onAddBookmark={bookmarks.addBookmark}
+            onClear={() => setManualAddress(null)}
+            onLookup={lookUpAddress}
+            onRemoveBookmark={bookmarks.removeBookmark}
+          />
 
-      <SummaryStrip
-        isConnected={effectiveIsConnected}
-        isFetching={isInitialFetching}
-        transactionCount={transactions.length}
-      />
+        </>
+      )}
 
-      <ActivityControls
-        activeChain={effectiveChain}
-        activityRange={activityRange}
-        chainHealth={chainHealth}
-        isConnected={effectiveIsConnected}
-        isSwitchingChain={isManualMode ? false : wallet.isSwitchingChain}
-        onRangeChange={setActivityRange}
-        onSwitchChain={(chainId) =>
-          isManualMode ? setManualChainId(chainId) : wallet.switchChain({ chainId })
-        }
-      />
+      {isShowingSampleActivity && <SampleDataBanner />}
 
-      <TransactionList
-        activeChainSymbol={activeChainSymbol}
-        canLoadMore={canLoadMore}
-        chain={effectiveChain}
-        copiedAddress={copiedAddress}
-        copiedTransactionId={copiedTransactionId}
-        expandedTransactionId={expandedTransactionId}
-        hasError={Boolean(activityQuery.error)}
-        isConnected={effectiveIsConnected}
-        isFetching={isInitialFetching}
-        isFetchingMore={isFetchingMore}
-        onCopyAddress={copyAddress}
-        onCopyHash={copyTransactionHash}
-        onLoadMore={loadMore}
-        onToggleTransaction={toggleTransaction}
-        transactions={transactions}
-      />
+      {(effectiveIsConnected || isShowingSampleActivity) && (
+        <>
+          <SummaryStrip
+            isConnected={effectiveIsConnected}
+            isFetching={isInitialFetching}
+            transactionCount={transactions.length}
+          />
+
+          <ActivityControls
+            activeChain={effectiveChain}
+            activityRange={activityRange}
+            chainHealth={chainHealth}
+            isConnected={effectiveIsConnected}
+            isSwitchingChain={isManualMode ? false : wallet.isSwitchingChain}
+            onRangeChange={setActivityRange}
+            onSwitchChain={(chainId) =>
+              isManualMode ? setManualChainId(chainId) : wallet.switchChain({ chainId })
+            }
+          />
+
+          <TransactionList
+            activeChainSymbol={activeChainSymbol}
+            canLoadMore={canLoadMore}
+            chain={effectiveChain}
+            copiedAddress={copiedAddress}
+            copiedTransactionId={copiedTransactionId}
+            expandedTransactionId={expandedTransactionId}
+            hasError={Boolean(activityQuery.error)}
+            isConnected={effectiveIsConnected}
+            isFetching={isInitialFetching}
+            isFetchingMore={isFetchingMore}
+            onCopyAddress={copyAddress}
+            onCopyHash={copyTransactionHash}
+            onLoadMore={loadMore}
+            onToggleTransaction={toggleTransaction}
+            transactions={transactions}
+          />
+        </>
+      )}
     </main>
   );
 }

@@ -12,6 +12,7 @@ export function WalletHeader({
   onDisconnect,
   onOpenRiskGuide,
   onToggleTheme,
+  showWalletControl,
   theme,
 }: {
   activeChainSymbol?: string;
@@ -24,6 +25,7 @@ export function WalletHeader({
   onDisconnect: () => void;
   onOpenRiskGuide: () => void;
   onToggleTheme: () => void;
+  showWalletControl: boolean;
   theme: Theme;
 }) {
   return (
@@ -38,7 +40,7 @@ export function WalletHeader({
         />
         <div>
           <p className="eyebrow">Wallet activity translator</p>
-          <h1>Wallet activity translator: DEMO</h1>
+          <h1>Wallet activity, translated.</h1>
           <p className="page-subtitle">
             A cleaner read on what moved, where it went, and which network it
             happened on.
@@ -65,18 +67,20 @@ export function WalletHeader({
             {theme === 'dark' ? '☀' : '☽'}
           </span>
         </button>
-        <button
-          className="connect-button"
-          type="button"
-          onClick={isConnected ? onDisconnect : onConnect}
-          disabled={isConnecting || !hasInjectedConnector}
-        >
-          {isConnecting
-            ? 'Connecting'
-            : isConnected
-              ? `Disconnect ${connectedLabel}`
-              : connectedLabel}
-        </button>
+        {showWalletControl && (
+          <button
+            className="connect-button"
+            type="button"
+            onClick={isConnected ? onDisconnect : onConnect}
+            disabled={isConnecting || !hasInjectedConnector}
+          >
+            {isConnecting
+              ? 'Connecting'
+              : isConnected
+                ? `Disconnect ${connectedLabel}`
+                : connectedLabel}
+          </button>
+        )}
         {isConnected && chain && (
           <span className="chain-badge">
             {chain.name}
