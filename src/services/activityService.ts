@@ -66,7 +66,7 @@ type BlockscoutListResponse<T> = {
   next_page_params?: BlockscoutCursor;
 };
 
-type ChainActivityConfig = {
+export type ChainActivityConfig = {
   apiBaseUrl: string;
   nativeSymbol: string;
   // Real contract addresses for widely-held tokens, keyed by the token's
@@ -418,7 +418,7 @@ async function detectExecutedByOthers(
   return flagged;
 }
 
-function applyExecutorRisk(
+export function applyExecutorRisk(
   transactions: NormalizedTransaction[],
   executedByOtherHashes: Set<string>,
 ): NormalizedTransaction[] {
@@ -474,7 +474,7 @@ const CONFUSABLE_LETTERS: Record<string, string> = {
  * splits any such precomposed letter back into base + mark so the strip
  * still catches it.
  */
-function normalizeSymbolForComparison(symbol: string): string {
+export function normalizeSymbolForComparison(symbol: string): string {
   return symbol
     .normalize('NFKD')
     .replace(/[\p{Mn}\p{Me}\p{Cf}\s]/gu, '')
@@ -491,7 +491,7 @@ function normalizeSymbolForComparison(symbol: string): string {
 // it's also *why* an impersonating token has no CoinGecko price: the price
 // lookup keys on tokenContractAddress, and the spoofing contract isn't the
 // real, listed asset.
-function detectSymbolImpersonation(
+export function detectSymbolImpersonation(
   symbol: string,
   tokenContractAddress: string | undefined,
   chainConfig: ChainActivityConfig,
@@ -510,7 +510,7 @@ function detectSymbolImpersonation(
   return undefined;
 }
 
-function normalizeTokenTransfer(
+export function normalizeTokenTransfer(
   transfer: BlockscoutTokenTransfer,
   ownerAddress: string,
   isOwnWallet: boolean,
@@ -562,7 +562,7 @@ function normalizeTokenTransfer(
   };
 }
 
-function normalizeNativeTransaction(
+export function normalizeNativeTransaction(
   transaction: BlockscoutTransaction,
   ownerAddress: string,
   nativeSymbol: string,
@@ -603,7 +603,7 @@ function normalizeNativeTransaction(
   };
 }
 
-function normalizeContractInteraction(
+export function normalizeContractInteraction(
   transaction: BlockscoutTransaction,
   ownerAddress: string,
   isOwnWallet: boolean,
@@ -648,7 +648,7 @@ function normalizeContractInteraction(
   };
 }
 
-function normalizeBlockscoutApproval(
+export function normalizeBlockscoutApproval(
   transaction: BlockscoutTransaction,
   ownerAddress: string,
   isOwnWallet: boolean,
@@ -714,7 +714,7 @@ function isUnlimitedBlockscoutApproval(
   }
 }
 
-function getApprovalKind(
+export function getApprovalKind(
   methodText: string,
   isUnlimited = false,
   isOwnWallet = true,
@@ -790,7 +790,7 @@ function getApprovalKind(
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
-function getScamOverride(
+export function getScamOverride(
   counterparty: BlockscoutAddress | null | undefined,
 ): TransactionRisk | undefined {
   if (counterparty?.is_scam !== true) {
@@ -811,7 +811,7 @@ function getScamOverride(
   };
 }
 
-function getTransferRisk(direction: 'sent' | 'received' | 'contract') {
+export function getTransferRisk(direction: 'sent' | 'received' | 'contract') {
   if (direction === 'contract') {
     return {
       level: 'unknown' as const,
@@ -828,7 +828,7 @@ function getTransferRisk(direction: 'sent' | 'received' | 'contract') {
   };
 }
 
-function getDirection(from: string, to: string, ownerAddress: string) {
+export function getDirection(from: string, to: string, ownerAddress: string) {
   const owner = ownerAddress.toLowerCase();
 
   if (from.toLowerCase() === owner && to.toLowerCase() === owner) {
@@ -897,7 +897,7 @@ function labelPlainAddress(address: string, ownerAddress: string, isOwnWallet: b
   return knownAddresses[address.toLowerCase()] ?? `Unknown address ${shortenAddress(address)}`;
 }
 
-function groupTransactions(transactions: NormalizedTransaction[], isOwnWallet: boolean) {
+export function groupTransactions(transactions: NormalizedTransaction[], isOwnWallet: boolean) {
   const byHash = new Map<string, NormalizedTransaction[]>();
 
   for (const transaction of transactions) {
@@ -974,7 +974,7 @@ const RISK_SEVERITY: Record<TransactionRisk['level'], number> = {
   low: 0,
 };
 
-function mostSevereRisk(risks: TransactionRisk[]): TransactionRisk | undefined {
+export function mostSevereRisk(risks: TransactionRisk[]): TransactionRisk | undefined {
   return risks.reduce<TransactionRisk | undefined>((worst, risk) => {
     if (!worst || RISK_SEVERITY[risk.level] > RISK_SEVERITY[worst.level]) return risk;
     return worst;
@@ -1048,7 +1048,7 @@ function compactUnique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
-function applyUsdPrices(
+export function applyUsdPrices(
   transactions: NormalizedTransaction[],
   priceMap: Map<string, number>,
   failedKeys: Set<string>,
@@ -1084,7 +1084,7 @@ function collectTokenAddresses(transactions: NormalizedTransaction[]): string[] 
   ];
 }
 
-function applyTokenSecurity(
+export function applyTokenSecurity(
   transactions: NormalizedTransaction[],
   securityMap: Map<string, TokenSecurityFlags>,
   failedAddresses: Set<string>,
@@ -1153,7 +1153,7 @@ function collectSpenderAddresses(transactions: NormalizedTransaction[]): string[
   ];
 }
 
-function applyAddressSecurity(
+export function applyAddressSecurity(
   transactions: NormalizedTransaction[],
   addressSecurityMap: Map<string, AddressSecurityFlags>,
   failedAddresses: Set<string>,

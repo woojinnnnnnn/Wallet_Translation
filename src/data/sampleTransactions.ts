@@ -39,8 +39,8 @@ export const sampleTransactions: NormalizedTransaction[] = [
   {
     id: '0xb3c1',
     type: 'received',
-    from: '0xBad...F00D',
-    fromAddress: '0xBadf00dBadf00dBadf00dBadf00dBadf00dBadF',
+    from: '0xBadf...adf0',
+    fromAddress: '0xBadf00dBadf00dBadf00dBadf00dBadf00dBadf0',
     to: 'My wallet',
     toAddress: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
     asset: 'SCAM',

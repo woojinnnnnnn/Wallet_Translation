@@ -110,7 +110,12 @@ export function TransactionCard({
             )}
           </div>
           <span className="expand-indicator">
-            <span className={`expand-chevron${isExpanded ? ' expand-chevron-open' : ''}`}>›</span>
+            <span
+              className={`expand-chevron${isExpanded ? ' expand-chevron-open' : ''}`}
+              aria-hidden="true"
+            >
+              ›
+            </span>
             {isExpanded ? 'Hide' : 'Details'}
           </span>
         </div>

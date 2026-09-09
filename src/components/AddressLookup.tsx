@@ -45,14 +45,19 @@ export function AddressLookup({
   return (
     <section className="address-lookup" aria-label="look up any address">
       <form className="address-lookup-form" onSubmit={handleSubmit}>
-        <span className="address-lookup-label">Look up any address</span>
+        <label className="address-lookup-label" htmlFor="address-lookup-input">
+          Look up any address
+        </label>
         <input
+          id="address-lookup-input"
           className="address-lookup-input"
           onChange={(event) => setValue(event.target.value)}
           placeholder="0x..."
           spellCheck={false}
           type="text"
           value={value}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? 'address-lookup-error' : undefined}
         />
         <button className="address-lookup-submit" type="submit">
           View
@@ -63,7 +68,11 @@ export function AddressLookup({
           </button>
         )}
       </form>
-      {error && <p className="address-lookup-error">{error}</p>}
+      {error && (
+        <p className="address-lookup-error" id="address-lookup-error" role="alert">
+          {error}
+        </p>
+      )}
       {activeAddress && (
         <p className="address-lookup-active">
           Viewing <strong>{shortenAddress(activeAddress)}</strong> — read-only,

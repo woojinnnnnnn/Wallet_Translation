@@ -73,6 +73,7 @@ export function TransactionList({
           disabled={isFetchingMore}
           onClick={onLoadMore}
           type="button"
+          aria-busy={isFetchingMore}
         >
           {isFetchingMore ? 'Loading more…' : 'Load more'}
         </button>

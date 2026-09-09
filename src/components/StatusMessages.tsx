@@ -1,5 +1,15 @@
 import type { Chain } from 'viem';
 
+// wagmi/viem errors extend viem's BaseError, whose `.message` is a
+// multi-line dump ("<short message>\n\nDocs: ...\nVersion: viem@x.x.x") meant
+// for a developer console, not a user-facing UI. `.shortMessage` is the same
+// error with just the human-readable first line — fall back to `.message`
+// for plain (non-viem) Errors, which don't have the extra trailer to strip.
+function getFriendlyMessage(error: Error): string {
+  const shortMessage = (error as { shortMessage?: string }).shortMessage;
+  return shortMessage ?? error.message;
+}
+
 export function StatusMessages({
   activityError,
   chain,
@@ -30,11 +40,13 @@ export function StatusMessages({
               , or install the MetaMask extension.
             </>
           ) : (
-            connectError.message
+            getFriendlyMessage(connectError)
           )}
         </p>
       )}
-      {switchChainError && (<p className="status status-error">{switchChainError.message}</p>)}
+      {switchChainError && (
+        <p className="status status-error">{getFriendlyMessage(switchChainError)}</p>
+      )}
       {!hasInjectedConnector && (<p className="status status-error">No browser wallet extension was found.</p>)}
       {isActivityUnsupported && (<p className="status status-error">
           Transaction history is not supported on {chain?.name} yet. Switch to
@@ -45,7 +57,7 @@ export function StatusMessages({
         <p className="status status-error">
           {activityError.name === 'TypeError'
             ? "Couldn't reach this network's API right now — it may be temporarily down. Try again shortly, or switch chains (check the status dot next to each network above)."
-            : activityError.message}
+            : getFriendlyMessage(activityError)}
         </p>
       )}
     </>

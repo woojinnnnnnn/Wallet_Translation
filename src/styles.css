@@ -34,6 +34,28 @@ body {
 
 button { font: inherit; }
 
+/* Global keyboard-focus ring — most interactive elements rely on this
+   instead of a per-component :focus-visible rule (a few, like
+   .transaction-summary-button, override it below for a tighter fit against
+   their own layout). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #3182F6;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+[data-theme="dark"] a:focus-visible,
+[data-theme="dark"] button:focus-visible,
+[data-theme="dark"] input:focus-visible,
+[data-theme="dark"] select:focus-visible,
+[data-theme="dark"] [tabindex]:focus-visible {
+  outline-color: #6FA8FF;
+}
+
 .app-shell {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
@@ -204,8 +226,13 @@ h1 {
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
   column-gap: 72px;
   row-gap: 28px;
-  border-bottom: 1px solid #E5E8EB;
-  padding: 28px 0 48px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(49, 130, 246, 0.12);
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(49, 130, 246, 0.14) 0%, transparent 60%),
+    linear-gradient(135deg, #EAF2FF 0%, #F7FAFF 55%, #FFFFFF 100%);
+  padding: 48px 56px;
 }
 
 .welcome-copy { max-width: 560px; }
@@ -1425,7 +1452,8 @@ h1 {
   .welcome-panel {
     grid-template-columns: 1fr;
     row-gap: 24px;
-    padding: 8px 0 32px;
+    border-radius: 20px;
+    padding: 28px 20px;
   }
   .welcome-copy h2 { font-size: 30px; }
   .welcome-copy > p:not(.welcome-eyebrow) { font-size: 15px; }
@@ -1496,11 +1524,16 @@ h1 {
   }
   .amount-block {
     /*gap: 20px;*/
+    min-width: 0;
     justify-items: start;
     /*text-align: left;*/
     transform: translateY(-12px);
   }
   .amount-block strong {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transform: translateY(-2px);
     white-space: nowrap;
   }
@@ -1624,7 +1657,12 @@ h1 {
 [data-theme="dark"] .sample-data-banner button:hover { background: rgba(49, 130, 246, 0.20); }
 
 /* Welcome screen */
-[data-theme="dark"] .welcome-panel { border-bottom-color: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .welcome-panel {
+  border-color: rgba(49, 130, 246, 0.18);
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(49, 130, 246, 0.16) 0%, transparent 60%),
+    linear-gradient(135deg, rgba(49, 130, 246, 0.08) 0%, rgba(255, 255, 255, 0.02) 55%, rgba(255, 255, 255, 0.00) 100%);
+}
 [data-theme="dark"] .welcome-eyebrow { color: #6FA8FF; }
 [data-theme="dark"] .welcome-copy h2 { color: #f1f5f9; }
 [data-theme="dark"] .welcome-copy > p:not(.welcome-eyebrow) { color: #94a3b8; }
