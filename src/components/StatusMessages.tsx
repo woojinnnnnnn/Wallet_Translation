@@ -31,13 +31,14 @@ export function StatusMessages({
         <p className="status status-error">
           {connectError.name === 'ProviderNotFoundError' ? (
             <>
-              No wallet app was detected in this browser.{' '}
+              No wallet was detected in this browser. Install a browser
+              wallet extension (MetaMask, Rabby, Coinbase Wallet, etc.), or{' '}
               <a
                 href={`https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}${window.location.search}`}
               >
-                Open in the MetaMask app
-              </a>
-              , or install the MetaMask extension.
+                open this page in the MetaMask app
+              </a>{' '}
+              on mobile.
             </>
           ) : (
             getFriendlyMessage(connectError)

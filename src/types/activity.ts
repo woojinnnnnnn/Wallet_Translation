@@ -17,8 +17,11 @@ export type NormalizedTransaction = {
   amountUsd?: string;
   movements?: TransactionMovement[];
   /**
-   * True when a security check for this transaction's token/spender failed
-   * or timed out — additive information, NOT an alternative to `risk`.
+   * True when a security check for this transaction — its token/spender, or
+   * (for a 'sent'/'swap' transfer) who actually executed it — failed, timed
+   * out, or was skipped to bound how many requests one page can fire (see
+   * MAX_EXECUTOR_CHECKS_PER_PAGE in activityService.ts). Additive
+   * information, NOT an alternative to `risk`.
    * `risk` always reflects whatever was independently determined (e.g. an
    * on-chain `is_scam` flag, or the default for its type); it is never
    * downgraded or left blank just because this is true. Any UI that renders

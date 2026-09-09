@@ -186,6 +186,11 @@ function App() {
           />
         </>
       )}
+
+      <footer className="app-footer">
+        Risk levels are an automated heuristic, not a security audit —
+        verify anything flagged before you act on it.
+      </footer>
     </main>
   );
 }

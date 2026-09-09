@@ -62,6 +62,16 @@ select:focus-visible,
   padding: 56px 0 80px;
 }
 
+.app-footer {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid #E5E8EB;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+
 /* ── Header ─────────────────────────────────────────────── */
 
 .toolbar {
@@ -71,7 +81,7 @@ select:focus-visible,
   gap: 24px;
   margin-bottom: 40px;
   padding-bottom: 32px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #cbd5e1;
 }
 
 .brand-block {
@@ -1177,6 +1187,38 @@ h1 {
 
 .movement-list strong { color: #0f172a; font-size: 10px; text-transform: uppercase; }
 
+.app-crash-fallback {
+  margin: 40px auto;
+  max-width: 480px;
+  border: 1.5px solid #fecdd3;
+  border-radius: 18px;
+  background: #fff1f2;
+  color: #881337;
+  padding: 32px;
+  text-align: center;
+}
+
+.app-crash-fallback p {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.app-crash-fallback button {
+  margin-top: 16px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 12px;
+  background: #3182F6;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 20px;
+}
+
+.app-crash-fallback button:hover { background: #1B64DA; }
+
 .empty-state {
   border: 1.5px dashed #E5E8EB;
   border-radius: 18px;
@@ -1392,6 +1434,18 @@ h1 {
   line-height: 1.6;
 }
 
+.risk-guide-disclaimer {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
 .risk-guide-sections {
   display: flex;
   flex-direction: column;
@@ -1572,7 +1626,11 @@ h1 {
 [data-theme="dark"] .eyebrow { color: #6FA8FF; }
 
 /* Toolbar */
-[data-theme="dark"] .toolbar { border-bottom-color: rgba(255, 255, 255, 0.06); }
+[data-theme="dark"] .toolbar { border-bottom-color: rgba(255, 255, 255, 0.16); }
+[data-theme="dark"] .app-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+  color: #475569;
+}
 
 /* Wallet controls */
 [data-theme="dark"] .theme-toggle-button {
@@ -1600,6 +1658,11 @@ h1 {
 [data-theme="dark"] .risk-guide-close { color: #64748b; }
 [data-theme="dark"] .risk-guide-close:hover { background: rgba(255, 255, 255, 0.06); }
 [data-theme="dark"] .risk-guide-intro { color: #64748b; }
+[data-theme="dark"] .risk-guide-disclaimer {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+}
 [data-theme="dark"] .risk-guide-footnote { color: #475569; }
 [data-theme="dark"] .risk-guide-section { border-color: rgba(255, 255, 255, 0.08); }
 [data-theme="dark"] .risk-guide-section-head p { color: #cbd5e1; }
@@ -1921,6 +1984,12 @@ h1 {
   color: #64748b;
 }
 [data-theme="dark"] .movement-list strong { color: #94a3b8; }
+
+[data-theme="dark"] .app-crash-fallback {
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.10);
+  color: #fda4af;
+}
 
 [data-theme="dark"] .empty-state {
   background: rgba(255, 255, 255, 0.02);

@@ -139,6 +139,11 @@ export function RiskGuideModal({
           (and, for tokens/spenders, third-party security checks). Here's what
           each level means and what triggers it.
         </p>
+        <p className="risk-guide-disclaimer">
+          This is an automated heuristic, not a security audit — it can miss
+          real risks and misjudge safe ones. Treat every level, especially
+          "low," as a starting point for your own review, not a guarantee.
+        </p>
         <div className="risk-guide-sections">
           {riskGuideSections.map((section) => (
             <div className="risk-guide-section" key={section.level}>

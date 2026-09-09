@@ -268,7 +268,7 @@ async function processActivity(
     ),
   ];
 
-  const [tokenSecurity, usdPrices, addressSecurity, executedByOtherHashes] = await Promise.all([
+  const [tokenSecurity, usdPrices, addressSecurity, executorCheck] = await Promise.all([
     fetchTokenSecurity(chainId, collectTokenAddresses(sorted)),
     fetchUsdPrices(chainId, sorted),
     fetchAddressSecurity(collectSpenderAddresses(sorted)),
@@ -277,7 +277,7 @@ async function processActivity(
     // so it runs concurrently with the other three instead of blocking them.
     isContractAddress(chainConfig.apiBaseUrl, address).then((ownerIsContract) =>
       ownerIsContract
-        ? new Set<string>()
+        ? { executedByOtherHashes: new Set<string>(), uncheckedHashes: new Set<string>() }
         : detectExecutedByOthers(chainConfig.apiBaseUrl, sentTokenTransferHashes, address),
     ),
   ]);
@@ -292,7 +292,8 @@ async function processActivity(
       addressSecurity.flags,
       addressSecurity.failedAddresses,
     ),
-    executedByOtherHashes,
+    executorCheck.executedByOtherHashes,
+    executorCheck.uncheckedHashes,
   );
 }
 
@@ -392,56 +393,91 @@ async function fetchTransactionSender(
   }
 }
 
+// Blockscout has no bulk "get the signer for N tx hashes" endpoint, so this
+// check costs one request per unique sent-token-transfer hash — unlike the
+// token-security check (one batched request) or the price check (capped at
+// MAX_TOKEN_PRICE_LOOKUPS_PER_CALL in priceService.ts), it had no limit at
+// all. A very active wallet (an exchange hot wallet, a bot — exactly the
+// kind of address people try first against a new tool) can have dozens of
+// these on a single page, and firing them all at once is what makes the app
+// visibly stall on that address. Capped the same way the price lookups are:
+// check a bounded number, and mark the rest as unchecked rather than
+// silently treating "we didn't ask" as "confirmed safe."
+const MAX_EXECUTOR_CHECKS_PER_PAGE = 15;
+
 /**
  * A "sent" token transfer's from/to describe whose balance moved, not who
  * signed the transaction — a spender using an earlier approval to call
  * transferFrom looks identical to a self-initiated send unless we check who
  * actually executed it. Flags hashes where the real signer isn't the wallet
  * owner, so applyExecutorRisk can surface that instead of "standard transfer."
+ *
+ * `uncheckedHashes` covers both hashes past the cap above and hashes whose
+ * lookup itself failed (timeout/network/non-OK) — either way, this check
+ * has no answer for them, so applyExecutorRisk should mark them incomplete
+ * rather than defaulting to "not executed by someone else."
  */
 async function detectExecutedByOthers(
   apiBaseUrl: string,
   hashes: string[],
   ownerAddress: string,
-): Promise<Set<string>> {
-  const flagged = new Set<string>();
+): Promise<{ executedByOtherHashes: Set<string>; uncheckedHashes: Set<string> }> {
+  const toCheck = hashes.slice(0, MAX_EXECUTOR_CHECKS_PER_PAGE);
+  const uncheckedHashes = new Set(hashes.slice(MAX_EXECUTOR_CHECKS_PER_PAGE));
+  const executedByOtherHashes = new Set<string>();
 
   await Promise.all(
-    hashes.map(async (hash) => {
+    toCheck.map(async (hash) => {
       const sender = await fetchTransactionSender(apiBaseUrl, hash);
-      if (sender && sender.toLowerCase() !== ownerAddress.toLowerCase()) {
-        flagged.add(hash);
+      if (sender === undefined) {
+        uncheckedHashes.add(hash);
+        return;
+      }
+      if (sender.toLowerCase() !== ownerAddress.toLowerCase()) {
+        executedByOtherHashes.add(hash);
       }
     }),
   );
 
-  return flagged;
+  return { executedByOtherHashes, uncheckedHashes };
 }
 
 export function applyExecutorRisk(
   transactions: NormalizedTransaction[],
   executedByOtherHashes: Set<string>,
+  uncheckedHashes: Set<string> = new Set(),
 ): NormalizedTransaction[] {
-  if (executedByOtherHashes.size === 0) return transactions;
+  if (executedByOtherHashes.size === 0 && uncheckedHashes.size === 0) return transactions;
 
   return transactions.map((tx) => {
-    // executedByOtherHashes is only ever seeded from hashes that had a
-    // 'sent' token leg (see sentTokenTransferHashes below), so a flagged
-    // hash always had an outgoing movement — but groupTransactions may have
-    // since retyped it to 'swap' if the same hash also had an incoming leg
-    // (the classic "drain disguised as a swap" pattern). Match both so the
-    // flag survives grouping instead of being silently dropped.
+    // executedByOtherHashes/uncheckedHashes are only ever seeded from hashes
+    // that had a 'sent' token leg (see sentTokenTransferHashes below), so a
+    // flagged hash always had an outgoing movement — but groupTransactions
+    // may have since retyped it to 'swap' if the same hash also had an
+    // incoming leg (the classic "drain disguised as a swap" pattern). Match
+    // both so the flag survives grouping instead of being silently dropped.
     const canCarryExecutorRisk = tx.type === 'sent' || tx.type === 'swap';
-    if (!canCarryExecutorRisk || !executedByOtherHashes.has(tx.id)) return tx;
+    if (!canCarryExecutorRisk) return tx;
 
-    return {
-      ...tx,
-      risk: {
-        level: 'high' as const,
-        reason:
-          'This transfer was executed by another address, not you — likely using an approval you granted earlier.',
-      },
-    };
+    if (executedByOtherHashes.has(tx.id)) {
+      return {
+        ...tx,
+        risk: {
+          level: 'high' as const,
+          reason:
+            'This transfer was executed by another address, not you — likely using an approval you granted earlier.',
+        },
+      };
+    }
+
+    // Never downgrades: only sets the flag true, and a tx that already
+    // carries it (from a failed token/address security check earlier in the
+    // pipeline) simply keeps it.
+    if (uncheckedHashes.has(tx.id)) {
+      return { ...tx, riskCheckIncomplete: true };
+    }
+
+    return tx;
   });
 }
 

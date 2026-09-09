@@ -430,6 +430,30 @@ describe('applyExecutorRisk', () => {
     const transactions = [tx({ id: 'h1' })];
     expect(applyExecutorRisk(transactions, new Set())).toBe(transactions);
   });
+
+  it('marks an unchecked sent transfer as riskCheckIncomplete without touching risk', () => {
+    const transactions = [tx({ id: 'h1', type: 'sent' })];
+    const [result] = applyExecutorRisk(transactions, new Set(), new Set(['h1']));
+
+    expect(result.riskCheckIncomplete).toBe(true);
+    expect(result.risk).toEqual(transactions[0].risk);
+  });
+
+  it('never lets an "unchecked" mark override a confirmed executor-mismatch flag', () => {
+    // A hash can't legitimately be in both sets, but high risk from an
+    // actual finding should win over "we couldn't check" either way.
+    const transactions = [tx({ id: 'h1', type: 'sent' })];
+    const [result] = applyExecutorRisk(transactions, new Set(['h1']), new Set(['h1']));
+
+    expect(result.risk.level).toBe('high');
+  });
+
+  it('preserves a riskCheckIncomplete flag already set by an earlier enrichment pass', () => {
+    const transactions = [tx({ id: 'h1', type: 'sent', riskCheckIncomplete: true })];
+    const [result] = applyExecutorRisk(transactions, new Set(), new Set());
+
+    expect(result.riskCheckIncomplete).toBe(true);
+  });
 });
 
 describe('applyTokenSecurity', () => {
