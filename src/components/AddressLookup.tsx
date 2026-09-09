@@ -1,8 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { isAddress } from 'viem';
-import { normalize } from 'viem/ens';
 import { useConfig } from 'wagmi';
-import { getEnsAddress } from 'wagmi/actions';
 import { mainnet } from 'wagmi/chains';
 import type { Bookmark } from '../hooks/useBookmarks';
 import { shortenAddress } from '../utils/format';
@@ -41,10 +39,20 @@ export function AddressLookup({
 
     // Not a 0x address — try it as an ENS name. ENS only resolves against
     // mainnet, regardless of which chain is currently selected in the app.
+    // Both viem/ens (its normalization tables aren't small) and
+    // wagmi/actions are loaded on demand here, not statically — most
+    // visitors never type an ENS name, and paying for that weight up front
+    // had noticeably grown the bundle (~114KB -> ~165KB gzipped) for a
+    // feature most people don't use.
     setError(null);
     setIsResolvingEns(true);
 
     try {
+      const [{ normalize }, { getEnsAddress }] = await Promise.all([
+        import('viem/ens'),
+        import('wagmi/actions'),
+      ]);
+
       const resolved = await getEnsAddress(wagmiConfig, {
         name: normalize(trimmed),
         chainId: mainnet.id,
