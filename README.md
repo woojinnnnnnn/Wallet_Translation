@@ -36,11 +36,13 @@ Wallet, etc.) are not supported yet.
   transaction is shown as one swap, not two unrelated transfers.
 - **USD estimates** on transfer amounts, via CoinGecko.
 - **Multi-chain** — Ethereum, Base, Arbitrum One, Optimism, Polygon, Gnosis,
-  zkSync Era, Scroll, and Sepolia (testnet), switchable from the header.
+  ZKsync Era, and Scroll, plus Sepolia, Gnosis Chiado, and ZKsync Sepolia
+  testnets, switchable from the header.
 - **Time range filters** — Latest 12 / 7 days / 30 days / All, with a
   "Load more" button to page in older history for the 7d/30d/All views.
-- **Look up any address** — paste any address into the search box to view its
-  activity read-only, without connecting a wallet.
+- **Look up any address** — paste an address or ENS name (e.g. `vitalik.eth`)
+  into the search box to view its activity read-only, without connecting a
+  wallet.
 - **Light & dark theme**, with copy-to-clipboard for addresses and tx hashes.
 - Works without connecting anything — it falls back to sample data so the UI
   always has something to show.
@@ -53,7 +55,7 @@ npm run dev
 ```
 
 No API keys required — Ethereum, Base, Arbitrum, Optimism, Polygon, Gnosis,
-zkSync Era, Scroll, and Sepolia all use public Blockscout endpoints for
+ZKsync Era, Scroll, and Sepolia all use public Blockscout endpoints for
 activity data.
 
 ```bash

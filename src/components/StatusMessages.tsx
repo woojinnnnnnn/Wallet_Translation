@@ -1,4 +1,15 @@
 import type { Chain } from 'viem';
+import { mainnetChains, testnetChains } from '../constants/chains';
+
+// Derived from the actual chain lists (rather than a hardcoded string) so
+// this message can't drift out of sync the way it already had once before —
+// adding a chain updates this automatically.
+const supportedChainNames = [...mainnetChains, ...testnetChains].map((chain) => chain.name);
+
+function joinWithOr(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? '';
+  return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
+}
 
 // wagmi/viem errors extend viem's BaseError, whose `.message` is a
 // multi-line dump ("<short message>\n\nDocs: ...\nVersion: viem@x.x.x") meant
@@ -50,9 +61,8 @@ export function StatusMessages({
       )}
       {!hasInjectedConnector && (<p className="status status-error">No browser wallet extension was found.</p>)}
       {isActivityUnsupported && (<p className="status status-error">
-          Transaction history is not supported on {chain?.name} yet. Switch to
-          Ethereum, Base, Arbitrum One, Optimism, Polygon, Gnosis, zkSync Era,
-          Scroll, or Sepolia.
+          Transaction history is not supported on {chain?.name} yet. Switch to{' '}
+          {joinWithOr(supportedChainNames)}.
         </p>
       )}
       {activityError && (

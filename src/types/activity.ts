@@ -54,3 +54,5 @@ export type TransactionMovement = {
 };
 
 export type ActivityRange = 'latest' | '7d' | '30d' | 'all';
+
+export type TransactionTypeFilter = 'all' | TransactionType;

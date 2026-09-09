@@ -142,6 +142,14 @@ const chainActivityConfig: Record<number, ChainActivityConfig> = {
     apiBaseUrl: 'https://eth-sepolia.blockscout.com/api/v2',
     nativeSymbol: 'Sepolia ETH',
   },
+  10200: {
+    apiBaseUrl: 'https://gnosis-chiado.blockscout.com/api/v2',
+    nativeSymbol: 'XDAI',
+  },
+  300: {
+    apiBaseUrl: 'https://zksync-sepolia.blockscout.com/api/v2',
+    nativeSymbol: 'ETH',
+  },
 };
 
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { mainnet } from 'wagmi/chains';
+import type { TransactionTypeFilter } from './types/activity';
 import { AddressLookup } from './components/AddressLookup';
 import { ActivityControls } from './components/ActivityControls';
 import { RiskGuideModal } from './components/RiskGuideModal';
@@ -25,6 +26,7 @@ function App() {
   );
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [isRiskGuideOpen, setIsRiskGuideOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<TransactionTypeFilter>('all');
   const { theme, toggleTheme } = useTheme();
   const chainHealth = useChainHealth();
   const bookmarks = useBookmarks();
@@ -38,6 +40,11 @@ function App() {
   const effectiveIsConnected = isManualMode || wallet.isConnected;
   const isEntryScreen = !effectiveIsConnected;
   const isShowingSampleActivity = !wallet.isConnected && !isManualMode;
+  // Revoking an approval requires the wallet that granted it to sign the
+  // revoke transaction — never true when looking up someone else's address
+  // via AddressLookup, and never true for sample data, only when the
+  // connected wallet is viewing its own activity.
+  const isOwnWalletView = wallet.isConnected && !isManualMode;
   const {
     activityQuery,
     activityRange,
@@ -57,6 +64,11 @@ function App() {
   // "Load more" only ever appends further activity — the existing list
   // should stay visible while it's in flight, not get replaced by skeletons.
   const isInitialFetching = activityQuery.isFetching && !isFetchingMore;
+  // Purely a display-level filter — it doesn't touch useWalletActivity's own
+  // range filtering/pagination, so "Load more" still loads based on the full
+  // unfiltered activity even while a type filter narrows what's shown.
+  const filteredTransactions =
+    typeFilter === 'all' ? transactions : transactions.filter((tx) => tx.type === typeFilter);
 
   function toggleTransaction(transactionId: string) {
     setExpandedTransactionId((currentId) =>
@@ -152,7 +164,7 @@ function App() {
           <SummaryStrip
             isConnected={effectiveIsConnected}
             isFetching={isInitialFetching}
-            transactionCount={transactions.length}
+            transactionCount={filteredTransactions.length}
           />
 
           <ActivityControls
@@ -165,6 +177,8 @@ function App() {
             onSwitchChain={(chainId) =>
               isManualMode ? setManualChainId(chainId) : wallet.switchChain({ chainId })
             }
+            onTypeFilterChange={setTypeFilter}
+            typeFilter={typeFilter}
           />
 
           <TransactionList
@@ -177,12 +191,14 @@ function App() {
             hasError={Boolean(activityQuery.error)}
             isConnected={effectiveIsConnected}
             isFetching={isInitialFetching}
+            isFiltered={typeFilter !== 'all'}
+            isOwnWalletView={isOwnWalletView}
             isFetchingMore={isFetchingMore}
             onCopyAddress={copyAddress}
             onCopyHash={copyTransactionHash}
             onLoadMore={loadMore}
             onToggleTransaction={toggleTransaction}
-            transactions={transactions}
+            transactions={filteredTransactions}
           />
         </>
       )}

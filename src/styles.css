@@ -377,6 +377,11 @@ h1 {
   color: #1B64DA;
 }
 
+.address-lookup-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .address-lookup-error { margin: 6px 0 0; color: #ef4444; font-size: 13px; }
 .address-lookup-active { margin: 6px 0 0; color: #64748b; font-size: 13px; }
 
@@ -506,6 +511,13 @@ h1 {
 
 .chain-switcher {
   display: flex;
+  /* stretch (not flex-start) is deliberate: it's what makes
+     .switcher-filters (Time range/Type) grow and re-center smoothly as
+     Network's height animates open/closed below. The jank this used to
+     cause came from Network's height changing in one instant jump (a
+     flex-wrap reflow) rather than from stretch itself — .testnet-reveal's
+     animated height fixes that at the source instead of papering over it
+     by pinning siblings to the top. */
   align-items: stretch;
   justify-content: space-between;
   gap: 18px;
@@ -551,7 +563,20 @@ h1 {
   gap: 10px;
 }
 
+.switcher-network-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .range-group { flex-shrink: 0; }
+
+.switcher-filters {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+}
 
 .switcher-group > span {
   color: #94a3b8;
@@ -695,6 +720,29 @@ h1 {
   border-color: rgba(0, 0, 0, 0.16);
   background: rgba(255, 255, 255, 0.65);
   color: #475569;
+}
+
+/* Grid-rows 0fr -> 1fr — the standard trick for animating to/from an
+   intrinsic ("auto") height without knowing the target height up front.
+   The inner wrapper clips overflow while collapsed and carries the gap
+   from the row above, since padding on *this* element (rather than on
+   .testnet-reveal itself) collapses along with it — padding on the grid
+   container itself wouldn't. */
+.testnet-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+
+.testnet-reveal-open { grid-template-rows: 1fr; }
+
+.testnet-reveal-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  overflow: hidden;
+  min-height: 0;
+  padding-top: 5px;
 }
 
 /* ── Transaction list ────────────────────────────────────── */
@@ -1145,6 +1193,33 @@ h1 {
 
 .explorer-link:hover { border-color: #94a3b8; color: #0f172a; }
 
+.transaction-actions-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.revoke-link {
+  width: fit-content;
+  min-height: 22px;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 10px;
+  text-decoration: none;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+
+.revoke-link:hover { border-color: #93c5fd; background: #dbeafe; color: #1e40af; }
+
 .transaction-actions {
   display: flex;
   align-items: flex-start;
@@ -1536,6 +1611,7 @@ h1 {
 
   .chain-switcher { align-items: stretch; flex-direction: column; gap: 12px; padding: 10px; }
   .switcher-group { align-items: flex-start; flex-direction: column; width: 100%; }
+  .switcher-filters { align-items: stretch; flex-direction: column; gap: 12px; width: 100%; }
 
   /* Network chips remain compact without turning into a two-row grid. */
   .switcher-options:not(.compact-options) {
@@ -1972,6 +2048,17 @@ h1 {
   color: #f1f5f9;
 }
 
+[data-theme="dark"] .revoke-link {
+  border-color: rgba(96, 165, 250, 0.35);
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+}
+[data-theme="dark"] .revoke-link:hover {
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(59, 130, 246, 0.2);
+  color: #bfdbfe;
+}
+
 [data-theme="dark"] .transaction-actions {
   background: #0d1424;
   border-top-color: rgba(255, 255, 255, 0.05);
@@ -2045,4 +2132,5 @@ h1 {
   ::view-transition-new(root) { animation: none; }
   .theme-icon { animation: none; }
   .chain-health-checking { animation: none; opacity: 0.7; }
+  .testnet-reveal { transition: none; }
 }

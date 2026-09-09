@@ -11,6 +11,7 @@ export function TransactionCard({
   copiedTransactionId,
   isConnected,
   isExpanded,
+  isOwnWalletView,
   onCopyAddress,
   onCopyHash,
   onToggle,
@@ -22,6 +23,7 @@ export function TransactionCard({
   copiedTransactionId: string | null;
   isConnected: boolean;
   isExpanded: boolean;
+  isOwnWalletView: boolean;
   onCopyAddress: (address: string) => void;
   onCopyHash: (hash: string) => void;
   onToggle: (transactionId: string) => void;
@@ -32,6 +34,10 @@ export function TransactionCard({
   const explorerUrl = getExplorerTransactionUrl(chain?.id, transaction.id);
   const riskLevel = transaction.risk.level;
   const showBanner = riskLevel === 'high' || riskLevel === 'medium';
+  // Revoking requires the address that granted the approval to sign the
+  // revoke transaction itself — only offer it when that's the connected
+  // wallet's own activity, not a read-only lookup of someone else's address.
+  const canRevoke = transaction.type === 'approval' && isOwnWalletView && Boolean(chain?.id);
   // A received token with no USD price usually means no exchange lists it —
   // the same signature as the unsolicited-airdrop spam this app exists to
   // flag (see the "SOS"/"MONKEY"/etc. pattern), though a genuinely new,
@@ -224,18 +230,30 @@ export function TransactionCard({
                 </div>
               </div>
             )}
-            {explorerUrl ? (
-              <a
-                className="explorer-link"
-                href={explorerUrl}
-                rel="noreferrer"
-                target="_blank"
-              >
-                View transaction on explorer
-              </a>
-            ) : (
-              <span>Explorer link unavailable</span>
-            )}
+            <div className="transaction-actions-links">
+              {explorerUrl ? (
+                <a
+                  className="explorer-link"
+                  href={explorerUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  View transaction on explorer
+                </a>
+              ) : (
+                <span>Explorer link unavailable</span>
+              )}
+              {canRevoke && (
+                <a
+                  className="revoke-link"
+                  href={`https://revoke.cash/address/${transaction.fromAddress}?chainId=${chain?.id}`}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Revoke this approval on revoke.cash →
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </div>

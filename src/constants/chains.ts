@@ -2,16 +2,18 @@ import {
   arbitrum,
   base,
   gnosis,
+  gnosisChiado,
   mainnet,
   optimism,
   polygon,
   scroll,
   sepolia,
   zkSync,
+  zkSyncSepoliaTestnet,
 } from 'wagmi/chains';
 
 export const mainnetChains = [mainnet, base, arbitrum, optimism, polygon, gnosis, zkSync, scroll];
-export const testnetChains = [sepolia];
+export const testnetChains = [sepolia, gnosisChiado, zkSyncSepoliaTestnet];
 export const supportedChains = [...mainnetChains, ...testnetChains];
 export type SupportedChainId = (typeof supportedChains)[number]['id'];
 
@@ -25,6 +27,8 @@ export const chainSymbols: Record<number, string> = {
   [zkSync.id]: 'ETH',
   [scroll.id]: 'ETH',
   [sepolia.id]: 'ETH',
+  [gnosisChiado.id]: 'XDAI',
+  [zkSyncSepoliaTestnet.id]: 'ETH',
 };
 
 export function getChainSymbol(chainId: number | undefined) {
@@ -42,5 +46,12 @@ export function getExplorerTransactionUrl(chainId: number | undefined, hash: str
   if (chainId === zkSync.id) return `https://explorer.zksync.io/tx/${hash}`;
   if (chainId === scroll.id) return `https://scrollscan.com/tx/${hash}`;
   if (chainId === sepolia.id) return `https://sepolia.etherscan.io/tx/${hash}`;
+  // Both testnets below have no Etherscan-family explorer, unlike their
+  // mainnets above — link straight to the Blockscout/native explorer
+  // instance that actually serves them (viem's own chain metadata for
+  // gnosisChiado points at a now-dead custom domain, confirmed by DNS
+  // failure, so this is the verified-live host instead).
+  if (chainId === gnosisChiado.id) return `https://gnosis-chiado.blockscout.com/tx/${hash}`;
+  if (chainId === zkSyncSepoliaTestnet.id) return `https://sepolia.explorer.zksync.io/tx/${hash}`;
   return undefined;
 }

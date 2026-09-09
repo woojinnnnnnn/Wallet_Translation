@@ -1,5 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { isAddress } from 'viem';
+import { normalize } from 'viem/ens';
+import { useConfig } from 'wagmi';
+import { getEnsAddress } from 'wagmi/actions';
+import { mainnet } from 'wagmi/chains';
 import type { Bookmark } from '../hooks/useBookmarks';
 import { shortenAddress } from '../utils/format';
 
@@ -22,18 +26,41 @@ export function AddressLookup({
 }) {
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isResolvingEns, setIsResolvingEns] = useState(false);
+  const wagmiConfig = useConfig();
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     const trimmed = value.trim();
 
-    if (!isAddress(trimmed)) {
-      setError('Enter a valid 0x address');
+    if (isAddress(trimmed)) {
+      setError(null);
+      onLookup(trimmed);
       return;
     }
 
+    // Not a 0x address — try it as an ENS name. ENS only resolves against
+    // mainnet, regardless of which chain is currently selected in the app.
     setError(null);
-    onLookup(trimmed);
+    setIsResolvingEns(true);
+
+    try {
+      const resolved = await getEnsAddress(wagmiConfig, {
+        name: normalize(trimmed),
+        chainId: mainnet.id,
+      });
+
+      if (!resolved) {
+        setError(`Couldn't resolve "${trimmed}" — enter a valid 0x address or ENS name.`);
+        return;
+      }
+
+      onLookup(resolved);
+    } catch {
+      setError('Enter a valid 0x address or ENS name (e.g. vitalik.eth)');
+    } finally {
+      setIsResolvingEns(false);
+    }
   }
 
   function handleClear() {
@@ -52,15 +79,15 @@ export function AddressLookup({
           id="address-lookup-input"
           className="address-lookup-input"
           onChange={(event) => setValue(event.target.value)}
-          placeholder="0x..."
+          placeholder="0x... or name.eth"
           spellCheck={false}
           type="text"
           value={value}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? 'address-lookup-error' : undefined}
         />
-        <button className="address-lookup-submit" type="submit">
-          View
+        <button className="address-lookup-submit" type="submit" disabled={isResolvingEns}>
+          {isResolvingEns ? 'Resolving…' : 'View'}
         </button>
         {activeAddress && (
           <button className="address-lookup-clear" onClick={handleClear} type="button">

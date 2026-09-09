@@ -14,6 +14,8 @@ export function TransactionList({
   isConnected,
   isFetching,
   isFetchingMore,
+  isFiltered,
+  isOwnWalletView,
   onCopyAddress,
   onCopyHash,
   onLoadMore,
@@ -30,6 +32,8 @@ export function TransactionList({
   isConnected: boolean;
   isFetching: boolean;
   isFetchingMore: boolean;
+  isFiltered: boolean;
+  isOwnWalletView: boolean;
   onCopyAddress: (address: string) => void;
   onCopyHash: (hash: string) => void;
   onLoadMore: () => void;
@@ -48,7 +52,9 @@ export function TransactionList({
           contradictory answers to the same question. */}
       {!isFetching && !hasError && isConnected && transactions.length === 0 && (
         <div className="empty-state">
-          No recent movement history found for this wallet.
+          {isFiltered
+            ? "No transactions match this filter — try Load more or switch it back to All."
+            : 'No recent movement history found for this wallet.'}
         </div>
       )}
       {!isFetching &&
@@ -60,6 +66,7 @@ export function TransactionList({
             copiedTransactionId={copiedTransactionId}
             isConnected={isConnected}
             isExpanded={expandedTransactionId === transaction.id}
+            isOwnWalletView={isOwnWalletView}
             key={transaction.id}
             onCopyAddress={onCopyAddress}
             onCopyHash={onCopyHash}
