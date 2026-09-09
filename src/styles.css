@@ -298,6 +298,23 @@ h1 {
   line-height: 1.5;
 }
 
+.welcome-walletconnect-button {
+  display: block;
+  min-height: 40px;
+  margin-top: 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 16px;
+}
+
+.welcome-walletconnect-button:hover { border-color: #94a3b8; color: #1e293b; }
+.welcome-walletconnect-button:disabled { cursor: not-allowed; opacity: 0.45; }
+
 .welcome-lookup {
   align-self: center;
   border-left: 1px solid #E5E8EB;
@@ -1808,6 +1825,14 @@ h1 {
 [data-theme="dark"] .welcome-connect-button { background: #3182F6; }
 [data-theme="dark"] .welcome-connect-button:hover { background: #4B93FF; }
 [data-theme="dark"] .welcome-wallet-note { color: #64748b; }
+[data-theme="dark"] .welcome-walletconnect-button {
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #cbd5e1;
+}
+[data-theme="dark"] .welcome-walletconnect-button:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #f1f5f9;
+}
 [data-theme="dark"] .welcome-lookup { border-color: rgba(255, 255, 255, 0.08); }
 [data-theme="dark"] .welcome-lookup > p { color: #94a3b8; }
 [data-theme="dark"] .bookmark-toggle { color: #475569; }

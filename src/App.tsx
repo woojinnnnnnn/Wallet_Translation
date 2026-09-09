@@ -129,8 +129,10 @@ function App() {
       {isEntryScreen ? (
         <WelcomePanel
           hasInjectedConnector={Boolean(wallet.injectedConnector)}
+          hasWalletConnectConnector={Boolean(wallet.walletConnectConnector)}
           isConnecting={wallet.isConnecting}
           onConnect={wallet.connectWallet}
+          onConnectWalletConnect={wallet.connectWalletConnect}
         >
           <AddressLookup
             activeAddress={manualAddress}

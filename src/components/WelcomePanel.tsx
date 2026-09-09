@@ -3,13 +3,17 @@ import type { ReactNode } from 'react';
 export function WelcomePanel({
   children,
   hasInjectedConnector,
+  hasWalletConnectConnector,
   isConnecting,
   onConnect,
+  onConnectWalletConnect,
 }: {
   children: ReactNode;
   hasInjectedConnector: boolean;
+  hasWalletConnectConnector: boolean;
   isConnecting: boolean;
   onConnect: () => void;
+  onConnectWalletConnect: () => void;
 }) {
   return (
     <section className="welcome-panel" aria-labelledby="welcome-title">
@@ -29,6 +33,16 @@ export function WelcomePanel({
         </button>
         {!hasInjectedConnector && (
           <span className="welcome-wallet-note">Wallet connection is unavailable in this browser.</span>
+        )}
+        {hasWalletConnectConnector && (
+          <button
+            className="welcome-walletconnect-button"
+            disabled={isConnecting}
+            onClick={onConnectWalletConnect}
+            type="button"
+          >
+            Connect with mobile wallet (QR code)
+          </button>
         )}
       </div>
 

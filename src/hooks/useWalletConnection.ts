@@ -20,7 +20,12 @@ export function useWalletConnection() {
   const connectedLabel = useMemo(() => {
     return address ? shortenAddress(address) : 'Connect wallet';
   }, [address]);
-  const injectedConnector = connectors[0];
+  // By .type rather than array index — order-independent, and stays correct
+  // if the connector list in wagmi.ts is ever reordered or grows further.
+  const injectedConnector = connectors.find((connector) => connector.type === 'injected');
+  const walletConnectConnector = connectors.find(
+    (connector) => connector.type === 'walletConnect',
+  );
 
   function connectWallet() {
     if (!injectedConnector) {
@@ -30,12 +35,21 @@ export function useWalletConnection() {
     connect({ connector: injectedConnector });
   }
 
+  function connectWalletConnect() {
+    if (!walletConnectConnector) {
+      return;
+    }
+
+    connect({ connector: walletConnectConnector });
+  }
+
   return {
     address,
     chain,
     connectError,
     connectedLabel,
     connectWallet,
+    connectWalletConnect,
     disconnect,
     injectedConnector,
     isConnected,
@@ -43,5 +57,6 @@ export function useWalletConnection() {
     isSwitchingChain,
     switchChain,
     switchChainError,
+    walletConnectConnector,
   };
 }

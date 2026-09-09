@@ -12,7 +12,15 @@ import {
   zkSync,
   zkSyncSepoliaTestnet,
 } from 'wagmi/chains';
-import { injected } from 'wagmi/connectors';
+import { injected, walletConnect } from 'wagmi/connectors';
+
+// Public, non-secret identifier — safe to expose in a client bundle (it's
+// how WalletConnect's relay tells requests apart per app, not an API key).
+// Optional at the type level so a checkout/build missing the env var still
+// produces a working app (injected-only) instead of crashing.
+const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as
+  | string
+  | undefined;
 
 export const wagmiConfig = createConfig({
   chains: [
@@ -36,6 +44,24 @@ export const wagmiConfig = createConfig({
     // wallet in the browser. The bare injected connector picks up whichever
     // provider the browser exposes instead.
     injected(),
+    // Covers mobile wallets with no browser extension (Trust Wallet,
+    // Rainbow, etc.) via a QR-code / deep-link handoff. Only registered
+    // when a project ID is configured, so a build without one still works
+    // with the injected connector alone rather than throwing at connect time.
+    ...(walletConnectProjectId
+      ? [
+          walletConnect({
+            projectId: walletConnectProjectId,
+            metadata: {
+              name: 'Wallet Transaction Viewer',
+              description:
+                'A transaction viewer that translates wallet activity into plain language and flags risk signals.',
+              url: window.location.origin,
+              icons: [`${window.location.origin}/favicon-dark.png`],
+            },
+          }),
+        ]
+      : []),
   ],
   transports: {
     [mainnet.id]: http(),
