@@ -119,7 +119,14 @@ const chainActivityConfig: Record<number, ChainActivityConfig> = {
     },
   },
   100: {
-    apiBaseUrl: 'https://gnosis.blockscout.com/api/v2',
+    // NOT gnosis.blockscout.com — it 301-redirects here, and the redirect
+    // response itself carries no Access-Control-Allow-Origin header, which
+    // the browser enforces even though the final destination's headers are
+    // fine. `curl` follows redirects and never checks CORS at all, so this
+    // passed curl verification while being broken for every real browser
+    // fetch (caught via a live console error, not testing). gnosisscan.io
+    // is the same Blockscout-shaped API with no redirect in the way.
+    apiBaseUrl: 'https://gnosisscan.io/api/v2',
     nativeSymbol: 'XDAI',
     // No protectedTokens here — CoinGecko doesn't list a canonical USDC/
     // USDT/DAI contract on this platform under the same coin id used
@@ -134,7 +141,10 @@ const chainActivityConfig: Record<number, ChainActivityConfig> = {
     },
   },
   534352: {
-    apiBaseUrl: 'https://scroll.blockscout.com/api/v2',
+    // Same redirect/CORS issue as Gnosis above — scroll.blockscout.com
+    // redirects to scrollscan.com, and only the redirect target actually
+    // sends CORS headers.
+    apiBaseUrl: 'https://scrollscan.com/api/v2',
     nativeSymbol: 'ETH',
     // Same as Gnosis above — no verified stablecoin contract to pin here yet.
   },
