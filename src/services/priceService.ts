@@ -14,12 +14,18 @@ const CHAIN_PLATFORM_IDS: Record<number, string> = {
   1: 'ethereum',
   8453: 'base',
   42161: 'arbitrum-one',
+  137: 'polygon-pos',
+  100: 'xdai',
+  324: 'zksync',
+  534352: 'scroll',
 };
 
 const NATIVE_SYMBOL_TO_COINGECKO_ID: Record<string, string> = {
   ETH: 'ethereum',
   'Sepolia ETH': 'ethereum',
   WETH: 'weth',
+  POL: 'polygon-ecosystem-token',
+  XDAI: 'xdai',
 };
 
 export type UsdPriceResult = {

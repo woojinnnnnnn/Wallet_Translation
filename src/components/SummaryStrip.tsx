@@ -15,7 +15,10 @@ export function SummaryStrip({
       </div>
       <div className="summary-card summary-card-networks">
         <span>Supported networks</span>
-        <strong>Ethereum, Sepolia, Base, Arbitrum One, Optimism (ETH)</strong>
+        <strong>
+          Ethereum, Base, Arbitrum One, Optimism, Polygon, Gnosis, zkSync Era,
+          Scroll, Sepolia
+        </strong>
       </div>
       <div className="summary-card summary-card-status">
         <span>Status</span>

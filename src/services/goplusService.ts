@@ -5,6 +5,10 @@ const GOPLUS_SUPPORTED_CHAINS: Record<number, string> = {
   1: '1',
   8453: '8453',
   42161: '42161',
+  137: '137',
+  100: '100',
+  324: '324',
+  534352: '534352',
 };
 
 const SECURITY_CACHE_TTL_MS = 15 * 60_000;

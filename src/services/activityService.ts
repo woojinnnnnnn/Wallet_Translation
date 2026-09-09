@@ -111,6 +111,33 @@ const chainActivityConfig: Record<number, ChainActivityConfig> = {
       DAI: '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
     },
   },
+  137: {
+    apiBaseUrl: 'https://polygon.blockscout.com/api/v2',
+    nativeSymbol: 'POL',
+    protectedTokens: {
+      USDC: '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359',
+    },
+  },
+  100: {
+    apiBaseUrl: 'https://gnosis.blockscout.com/api/v2',
+    nativeSymbol: 'XDAI',
+    // No protectedTokens here — CoinGecko doesn't list a canonical USDC/
+    // USDT/DAI contract on this platform under the same coin id used
+    // elsewhere, and this list would rather stay empty than carry a
+    // guessed address for an anti-impersonation check.
+  },
+  324: {
+    apiBaseUrl: 'https://zksync.blockscout.com/api/v2',
+    nativeSymbol: 'ETH',
+    protectedTokens: {
+      USDC: '0x1d17cbcf0d6d143135ae902365d2e5e2a16538d4',
+    },
+  },
+  534352: {
+    apiBaseUrl: 'https://scroll.blockscout.com/api/v2',
+    nativeSymbol: 'ETH',
+    // Same as Gnosis above — no verified stablecoin contract to pin here yet.
+  },
   11155111: {
     apiBaseUrl: 'https://eth-sepolia.blockscout.com/api/v2',
     nativeSymbol: 'Sepolia ETH',

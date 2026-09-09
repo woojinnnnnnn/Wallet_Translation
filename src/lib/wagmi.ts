@@ -1,9 +1,19 @@
 import { createConfig, http } from 'wagmi';
-import { arbitrum, base, mainnet, optimism, sepolia } from 'wagmi/chains';
+import {
+  arbitrum,
+  base,
+  gnosis,
+  mainnet,
+  optimism,
+  polygon,
+  scroll,
+  sepolia,
+  zkSync,
+} from 'wagmi/chains';
 import { injected } from 'wagmi/connectors';
 
 export const wagmiConfig = createConfig({
-  chains: [mainnet, base, arbitrum, optimism, sepolia],
+  chains: [mainnet, base, arbitrum, optimism, polygon, gnosis, zkSync, scroll, sepolia],
   connectors: [
     // No `target` — a pinned target (e.g. 'metaMask') makes wagmi look only
     // for that wallet's specific injected flag, so anything else providing
@@ -18,6 +28,10 @@ export const wagmiConfig = createConfig({
     [base.id]: http(),
     [arbitrum.id]: http(),
     [optimism.id]: http(),
+    [polygon.id]: http(),
+    [gnosis.id]: http(),
+    [zkSync.id]: http(),
+    [scroll.id]: http(),
     [sepolia.id]: http(),
   },
 });

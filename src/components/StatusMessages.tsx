@@ -51,7 +51,8 @@ export function StatusMessages({
       {!hasInjectedConnector && (<p className="status status-error">No browser wallet extension was found.</p>)}
       {isActivityUnsupported && (<p className="status status-error">
           Transaction history is not supported on {chain?.name} yet. Switch to
-          Ethereum, Base, Arbitrum One, Optimism, or Sepolia.
+          Ethereum, Base, Arbitrum One, Optimism, Polygon, Gnosis, zkSync Era,
+          Scroll, or Sepolia.
         </p>
       )}
       {activityError && (
